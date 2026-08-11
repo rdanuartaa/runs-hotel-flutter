@@ -45,3 +45,11 @@ class BookingError extends BookingState {
   @override
   List<Object?> get props => [message];
 }
+
+class AllBookingsLoaded extends BookingState {
+  final List<BookingModel> bookings;
+  const AllBookingsLoaded(this.bookings);
+
+  @override
+  List<Object?> get props => [bookings];
+}

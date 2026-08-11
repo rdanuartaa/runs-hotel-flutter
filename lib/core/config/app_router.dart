@@ -22,7 +22,9 @@ import '../../features/payment/presentation/screens/payment_status_screen.dart';
 import '../../features/payment/presentation/cubit/payment_cubit.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
-import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
+import '../../features/admin/presentation/screens/admin_hotels_screen.dart';
+import '../../features/admin/presentation/screens/admin_bookings_screen.dart';
+import '../../features/admin/presentation/screens/admin_reports_screen.dart';
 import '../../injection_container.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
@@ -40,7 +42,25 @@ class AppRouter {
       final isAuthRoute = state.matchedLocation == '/login' || state.matchedLocation == '/register';
 
       if (!isAuth && !isAuthRoute) return '/login';
-      if (isAuth && isAuthRoute) return '/';
+      
+      if (isAuth) {
+        final isAdmin = authState.user.isAdmin;
+        
+        // Prevent logged in user from going to login/register
+        if (isAuthRoute) {
+          return isAdmin ? '/admin' : '/';
+        }
+        
+        // Prevent admin from going to customer home/search/booking
+        if (isAdmin && (state.matchedLocation == '/' || state.matchedLocation == '/hotels' || state.matchedLocation == '/bookings')) {
+          return '/admin';
+        }
+        
+        // Prevent customer from going to admin pages
+        if (!isAdmin && state.matchedLocation.startsWith('/admin')) {
+          return '/';
+        }
+      }
       return null;
     },
     routes: [
@@ -83,6 +103,27 @@ class AppRouter {
           GoRoute(
             path: '/profile',
             builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: '/admin',
+            builder: (context, state) => BlocProvider.value(
+              value: getIt<HotelCubit>()..loadHotels(),
+              child: const AdminHotelsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/bookings',
+            builder: (context, state) => BlocProvider(
+              create: (_) => getIt<BookingCubit>()..loadAllBookings(),
+              child: const AdminBookingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/admin/reports',
+            builder: (context, state) => BlocProvider.value(
+              value: getIt<BookingCubit>()..loadAllBookings(),
+              child: const AdminReportsScreen(),
+            ),
           ),
         ],
       ),
@@ -157,10 +198,6 @@ class AppRouter {
         path: '/edit-profile',
         builder: (context, state) => const EditProfileScreen(),
       ),
-      GoRoute(
-        path: '/admin',
-        builder: (context, state) => const AdminDashboardScreen(),
-      ),
     ],
   );
 }
@@ -169,17 +206,28 @@ class _MainShell extends StatelessWidget {
   final Widget child;
   const _MainShell({required this.child});
 
-  int _currentIndex(BuildContext context) {
+  int _currentIndex(BuildContext context, bool isAdmin) {
     final location = GoRouterState.of(context).matchedLocation;
-    if (location == '/') return 0;
-    if (location == '/hotels') return 1;
-    if (location == '/bookings') return 2;
-    if (location == '/profile') return 3;
-    return 0;
+    if (isAdmin) {
+      if (location == '/admin') return 0;
+      if (location == '/admin/bookings') return 1;
+      if (location == '/admin/reports') return 2;
+      if (location == '/profile') return 3;
+      return 0;
+    } else {
+      if (location == '/') return 0;
+      if (location == '/hotels') return 1;
+      if (location == '/bookings') return 2;
+      if (location == '/profile') return 3;
+      return 0;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthCubit>().state;
+    final isAdmin = authState is AuthAuthenticated && authState.user.isAdmin;
+
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
@@ -194,44 +242,80 @@ class _MainShell extends StatelessWidget {
           ],
         ),
         child: NavigationBar(
-          selectedIndex: _currentIndex(context),
+          selectedIndex: _currentIndex(context, isAdmin),
           onDestinationSelected: (index) {
-            switch (index) {
-              case 0:
-                context.go('/');
-              case 1:
-                context.go('/hotels');
-              case 2:
-                context.go('/bookings');
-              case 3:
-                context.go('/profile');
+            if (isAdmin) {
+              switch (index) {
+                case 0:
+                  context.go('/admin');
+                case 1:
+                  context.go('/admin/bookings');
+                case 2:
+                  context.go('/admin/reports');
+                case 3:
+                  context.go('/profile');
+              }
+            } else {
+              switch (index) {
+                case 0:
+                  context.go('/');
+                case 1:
+                  context.go('/hotels');
+                case 2:
+                  context.go('/bookings');
+                case 3:
+                  context.go('/profile');
+              }
             }
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
           indicatorColor: AppColors.primarySurface,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.search_outlined),
-              selectedIcon: Icon(Icons.search_rounded, color: AppColors.primary),
-              label: 'Cari',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.bookmark_border_rounded),
-              selectedIcon: Icon(Icons.bookmark_rounded, color: AppColors.primary),
-              label: 'Booking',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
-              label: 'Profil',
-            ),
-          ],
+          destinations: isAdmin 
+          ? const [
+              NavigationDestination(
+                icon: Icon(Icons.hotel_outlined),
+                selectedIcon: Icon(Icons.hotel, color: AppColors.primary),
+                label: 'Kelola Hotel',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.list_alt_outlined),
+                selectedIcon: Icon(Icons.list_alt, color: AppColors.primary),
+                label: 'Pesanan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.attach_money_outlined),
+                selectedIcon: Icon(Icons.attach_money, color: AppColors.primary),
+                label: 'Laporan',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+                label: 'Profil Admin',
+              ),
+            ]
+          : const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.search_outlined),
+                selectedIcon: Icon(Icons.search_rounded, color: AppColors.primary),
+                label: 'Cari',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.bookmark_border_rounded),
+                selectedIcon: Icon(Icons.bookmark_rounded, color: AppColors.primary),
+                label: 'Booking',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+                label: 'Profil',
+              ),
+            ],
         ),
       ),
     );

@@ -53,33 +53,57 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final response = await _client.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    print('--- START LOGIN PROCESS ---');
+    print('Mencoba login dengan email: $email');
+    
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
 
-    if (response.user == null) {
-      throw Exception('Email atau password salah.');
+      if (response.user == null) {
+        print('Login gagal: response.user adalah null');
+        throw Exception('Email atau password salah.');
+      }
+      print('Login Auth Supabase BERHASIL. User ID: ${response.user!.id}');
+
+      // Periksa apakah profil di public.users sudah ada
+      print('Mengecek profil di tabel public.users...');
+      final existing = await _client
+          .from('users')
+          .select()
+          .eq('id', response.user!.id)
+          .maybeSingle();
+
+      // Jika belum ada (misal dibuat manual dari Dashboard), buatkan profil default
+      if (existing == null) {
+        print('Profil belum ada di public.users. Membuat profil baru...');
+        await _client.from('users').insert({
+          'id': response.user!.id,
+          'email': response.user!.email,
+          'full_name': response.user!.userMetadata?['full_name'] ?? 'User',
+          'role': response.user!.email == 'adminhotel@gmail.com' || response.user!.email == 'adminhotel2@gmail.com' ? 'admin' : 'guest',
+        });
+        print('Profil baru berhasil dibuat!');
+      } else {
+        print('Profil sudah ada di public.users. Lanjut...');
+      }
+
+      print('Mengambil data profil lengkap...');
+      final profile = await getUserProfile(response.user!.id);
+      print('--- END LOGIN PROCESS (SUKSES) ---');
+      return profile;
+    } on AuthException catch (e) {
+      print('ERROR SAAT LOGIN (AuthException): $e');
+      if (e.message.toLowerCase().contains('invalid login credentials')) {
+        throw Exception('Email atau Password salah! Silakan cek kembali.');
+      }
+      throw Exception('Gagal login: ${e.message}');
+    } catch (e) {
+      print('ERROR SAAT LOGIN: $e');
+      throw Exception('Terjadi kesalahan yang tidak terduga.');
     }
-
-    // Periksa apakah profil di public.users sudah ada
-    final existing = await _client
-        .from('users')
-        .select()
-        .eq('id', response.user!.id)
-        .maybeSingle();
-
-    // Jika belum ada (misal dibuat manual dari Dashboard), buatkan profil default
-    if (existing == null) {
-      await _client.from('users').insert({
-        'id': response.user!.id,
-        'email': response.user!.email,
-        'full_name': response.user!.userMetadata?['full_name'] ?? 'User',
-        'role': response.user!.email == 'adminhotel@gmail.com' ? 'admin' : 'guest',
-      });
-    }
-
-    return await getUserProfile(response.user!.id);
   }
 
   Future<UserModel?> signInWithGoogle() async {

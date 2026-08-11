@@ -45,6 +45,21 @@ class BookingRepository {
     return (data as List).map((e) => BookingModel.fromJson(e)).toList();
   }
 
+  // --- UNTUK ADMIN ---
+  Future<List<BookingModel>> getAllBookings({String? status}) async {
+    var query = _client
+        .from('bookings')
+        .select('*, hotels(name, thumbnail_url, city), rooms(name, room_type), users(full_name, email)');
+
+    if (status != null) {
+      query = query.eq('status', status);
+    }
+
+    final data = await query.order('created_at', ascending: false);
+
+    return (data as List).map((e) => BookingModel.fromJson(e)).toList();
+  }
+
   Future<List<BookingModel>> getUpcomingBookings(String userId) async {
     final data = await _client
         .from('bookings')

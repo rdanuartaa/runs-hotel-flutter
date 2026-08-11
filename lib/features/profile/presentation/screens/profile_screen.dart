@@ -99,13 +99,6 @@ class ProfileScreen extends StatelessWidget {
                   const Gap(32),
 
                   // Menu items
-                  if (user.isAdmin)
-                    _menuItem(
-                      icon: Icons.admin_panel_settings,
-                      title: 'Panel Admin',
-                      onTap: () => context.push('/admin'),
-                    ).animate().fadeIn(delay: 350.ms).slideX(begin: -0.1),
-
                   _menuItem(
                     icon: Icons.person_outline,
                     title: AppStrings.editProfile,
