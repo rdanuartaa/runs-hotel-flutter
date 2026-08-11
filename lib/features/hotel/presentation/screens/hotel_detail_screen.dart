@@ -74,7 +74,9 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                   ),
                   flexibleSpace: FlexibleSpaceBar(
                     background: ImageGallery(
-                      imageUrls: hotel.imageUrls ?? [if (hotel.thumbnailUrl != null) hotel.thumbnailUrl!],
+                      imageUrls: (hotel.imageUrls == null || hotel.imageUrls!.isEmpty)
+                          ? [if (hotel.thumbnailUrl != null) hotel.thumbnailUrl!]
+                          : hotel.imageUrls!,
                     ),
                   ),
                 ),
