@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/hotel_model.dart';
 import '../models/room_model.dart';
@@ -131,5 +132,135 @@ class HotelRepository {
         .toList();
     cities.sort();
     return cities;
+  }
+
+  Future<HotelModel> addHotel({
+    required String name,
+    String? description,
+    required String address,
+    required String city,
+    String? province,
+    required double latitude,
+    required double longitude,
+    required int starRating,
+    String? thumbnailUrl,
+    List<String> facilities = const [],
+  }) async {
+    final response = await _client.from('hotels').insert({
+      'name': name,
+      'description': description,
+      'address': address,
+      'city': city,
+      'province': province,
+      'latitude': latitude,
+      'longitude': longitude,
+      'star_rating': starRating,
+      'thumbnail_url': thumbnailUrl,
+      'facilities': facilities,
+      'is_active': true,
+    }).select().single();
+
+    return HotelModel.fromJson(response);
+  }
+
+  Future<HotelModel> updateHotel({
+    required String id,
+    required String name,
+    String? description,
+    required String address,
+    required String city,
+    String? province,
+    required double latitude,
+    required double longitude,
+    required int starRating,
+    String? thumbnailUrl,
+    List<String> facilities = const [],
+  }) async {
+    final response = await _client.from('hotels').update({
+      'name': name,
+      'description': description,
+      'address': address,
+      'city': city,
+      'province': province,
+      'latitude': latitude,
+      'longitude': longitude,
+      'star_rating': starRating,
+      'thumbnail_url': thumbnailUrl,
+      'facilities': facilities,
+    }).eq('id', id).select().single();
+
+    return HotelModel.fromJson(response);
+  }
+
+  Future<void> deleteHotel(String id) async {
+    await _client.from('hotels').update({'is_active': false}).eq('id', id);
+  }
+
+  Future<RoomModel> addRoom({
+    required String hotelId,
+    required String name,
+    String? description,
+    required String roomType,
+    required int pricePerNight,
+    required int maxGuests,
+    required int totalRooms,
+    String? thumbnailUrl,
+    List<String> amenities = const [],
+  }) async {
+    final response = await _client.from('rooms').insert({
+      'hotel_id': hotelId,
+      'name': name,
+      'description': description,
+      'room_type': roomType,
+      'price_per_night': pricePerNight,
+      'max_guests': maxGuests,
+      'total_rooms': totalRooms,
+      'thumbnail_url': thumbnailUrl,
+      'amenities': amenities,
+      'is_available': true,
+    }).select().single();
+
+    return RoomModel.fromJson(response);
+  }
+
+  Future<RoomModel> updateRoom({
+    required String id,
+    required String name,
+    String? description,
+    required String roomType,
+    required int pricePerNight,
+    required int maxGuests,
+    required int totalRooms,
+    String? thumbnailUrl,
+    List<String> amenities = const [],
+  }) async {
+    final response = await _client.from('rooms').update({
+      'name': name,
+      'description': description,
+      'room_type': roomType,
+      'price_per_night': pricePerNight,
+      'max_guests': maxGuests,
+      'total_rooms': totalRooms,
+      'thumbnail_url': thumbnailUrl,
+      'amenities': amenities,
+    }).eq('id', id).select().single();
+
+    return RoomModel.fromJson(response);
+  }
+
+  Future<void> deleteRoom(String id) async {
+    await _client.from('rooms').delete().eq('id', id);
+  }
+
+  Future<String> uploadImage(File file, String folder) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+    final filePath = '$folder/$fileName';
+    
+    await _client.storage.from('hotel_images').upload(
+      filePath,
+      file,
+    );
+    
+    return _client.storage.from('hotel_images').getPublicUrl(filePath);
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/models/hotel_model.dart';
@@ -86,5 +87,165 @@ class HotelCubit extends Cubit<HotelState> {
     } catch (e) {
       emit(HotelError(e.toString()));
     }
+  }
+
+  Future<bool> addHotel({
+    required String name,
+    String? description,
+    required String address,
+    required String city,
+    String? province,
+    required double latitude,
+    required double longitude,
+    required int starRating,
+    String? thumbnailUrl,
+    List<String> facilities = const [],
+  }) async {
+    emit(const HotelLoading());
+    try {
+      await _hotelRepository.addHotel(
+        name: name,
+        description: description,
+        address: address,
+        city: city,
+        province: province,
+        latitude: latitude,
+        longitude: longitude,
+        starRating: starRating,
+        thumbnailUrl: thumbnailUrl,
+        facilities: facilities,
+      );
+      await loadHotels();
+      return true;
+    } catch (e) {
+      emit(HotelError(e.toString()));
+      return false;
+    }
+  }
+
+  Future<bool> updateHotel({
+    required String id,
+    required String name,
+    String? description,
+    required String address,
+    required String city,
+    String? province,
+    required double latitude,
+    required double longitude,
+    required int starRating,
+    String? thumbnailUrl,
+    List<String> facilities = const [],
+  }) async {
+    emit(const HotelLoading());
+    try {
+      await _hotelRepository.updateHotel(
+        id: id,
+        name: name,
+        description: description,
+        address: address,
+        city: city,
+        province: province,
+        latitude: latitude,
+        longitude: longitude,
+        starRating: starRating,
+        thumbnailUrl: thumbnailUrl,
+        facilities: facilities,
+      );
+      await loadHotels();
+      return true;
+    } catch (e) {
+      emit(HotelError(e.toString()));
+      return false;
+    }
+  }
+
+  Future<void> deleteHotel(String id) async {
+    emit(const HotelLoading());
+    try {
+      await _hotelRepository.deleteHotel(id);
+      await loadHotels();
+    } catch (e) {
+      emit(HotelError(e.toString()));
+    }
+  }
+
+  Future<bool> addRoom({
+    required String hotelId,
+    required String name,
+    String? description,
+    required String roomType,
+    required int pricePerNight,
+    required int maxGuests,
+    required int totalRooms,
+    String? thumbnailUrl,
+    List<String> amenities = const [],
+  }) async {
+    emit(const HotelLoading());
+    try {
+      await _hotelRepository.addRoom(
+        hotelId: hotelId,
+        name: name,
+        description: description,
+        roomType: roomType,
+        pricePerNight: pricePerNight,
+        maxGuests: maxGuests,
+        totalRooms: totalRooms,
+        thumbnailUrl: thumbnailUrl,
+        amenities: amenities,
+      );
+      // Reload hotel detail so the new room is visible
+      await loadHotelDetail(hotelId);
+      return true;
+    } catch (e) {
+      emit(HotelError(e.toString()));
+      return false;
+    }
+  }
+
+  Future<bool> updateRoom({
+    required String id,
+    required String hotelId,
+    required String name,
+    String? description,
+    required String roomType,
+    required int pricePerNight,
+    required int maxGuests,
+    required int totalRooms,
+    String? thumbnailUrl,
+    List<String> amenities = const [],
+  }) async {
+    emit(const HotelLoading());
+    try {
+      await _hotelRepository.updateRoom(
+        id: id,
+        name: name,
+        description: description,
+        roomType: roomType,
+        pricePerNight: pricePerNight,
+        maxGuests: maxGuests,
+        totalRooms: totalRooms,
+        thumbnailUrl: thumbnailUrl,
+        amenities: amenities,
+      );
+      await loadHotelDetail(hotelId);
+      return true;
+    } catch (e) {
+      emit(HotelError(e.toString()));
+      return false;
+    }
+  }
+
+  Future<void> deleteRoom(String id, String hotelId) async {
+    emit(const HotelLoading());
+    try {
+      await _hotelRepository.deleteRoom(id);
+      await loadHotelDetail(hotelId);
+    } catch (e) {
+      emit(HotelError(e.toString()));
+    }
+  }
+
+  Future<String> uploadImage(File file, String folder) async {
+    return await _hotelRepository.uploadImage(file, folder);
   }
 }

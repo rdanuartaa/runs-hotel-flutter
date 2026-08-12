@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
+import 'package:go_router/go_router.dart';
 import '../../../hotel/presentation/cubit/hotel_cubit.dart';
 import '../../../hotel/data/models/hotel_model.dart';
 
@@ -19,14 +20,17 @@ class AdminHotelsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: BlocBuilder<HotelCubit, HotelState>(
+      body: BlocConsumer<HotelCubit, HotelState>(
+        listener: (context, state) {
+          if (state is HotelError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            );
+          }
+        },
         builder: (context, state) {
           if (state is HotelLoading) {
             return const Center(child: CircularProgressIndicator());
-          }
-          
-          if (state is HotelError) {
-            return Center(child: Text(state.message, style: TextStyle(color: Colors.red)));
           }
           
           if (state is HotelListLoaded) {
@@ -57,20 +61,50 @@ class AdminHotelsScreen extends StatelessWidget {
                       ),
                     ),
                     title: Text(hotel.name, style: AppTextStyles.h4),
-                    subtitle: Text(hotel.city, style: AppTextStyles.bodySmall),
+                    subtitle: Text('${hotel.city} • Tap untuk kelola kamar', style: AppTextStyles.bodySmall),
+                    onTap: () {
+                      context.push('/admin/hotels/${hotel.id}/rooms');
+                    },
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
                           icon: const Icon(Icons.edit, color: AppColors.primary),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur edit segera hadir!')));
+                          onPressed: () async {
+                            final result = await context.push('/admin/add-hotel', extra: hotel);
+                            if (result == true && context.mounted) {
+                              context.read<HotelCubit>().loadHotels();
+                            }
                           },
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur hapus segera hadir!')));
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Hapus Hotel'),
+                                content: Text('Yakin ingin menghapus ${hotel.name}?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: const Text('Batal'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      Navigator.pop(ctx);
+                                      await context.read<HotelCubit>().deleteHotel(hotel.id);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Hotel berhasil dihapus')),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -85,8 +119,11 @@ class AdminHotelsScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fitur tambah hotel segera hadir!')));
+        onPressed: () async {
+          final result = await context.push('/admin/add-hotel');
+          if (result == true && context.mounted) {
+            context.read<HotelCubit>().loadHotels();
+          }
         },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),

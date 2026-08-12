@@ -15,6 +15,7 @@ class HotelBookingApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthCubit>(
+          lazy: false,
           create: (_) => getIt<AuthCubit>()..checkAuthStatus(),
         ),
       ],

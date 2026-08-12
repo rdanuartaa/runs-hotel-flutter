@@ -25,7 +25,7 @@ Future<void> initDependencies() async {
   getIt.registerLazySingleton<ProfileRepository>(() => ProfileRepository(client));
 
   // Cubits
-  getIt.registerFactory<AuthCubit>(() => AuthCubit(getIt<AuthRepository>()));
+  getIt.registerLazySingleton<AuthCubit>(() => AuthCubit(getIt<AuthRepository>()));
   getIt.registerFactory<HotelCubit>(() => HotelCubit(getIt<HotelRepository>()));
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<HotelRepository>()));
   getIt.registerFactory<BookingCubit>(() => BookingCubit(getIt<BookingRepository>()));

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
@@ -23,11 +25,31 @@ import '../../features/payment/presentation/cubit/payment_cubit.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/admin/presentation/screens/admin_hotels_screen.dart';
+import '../../features/admin/presentation/screens/admin_add_hotel_screen.dart';
+import '../../features/admin/presentation/screens/admin_rooms_screen.dart';
+import '../../features/admin/presentation/screens/admin_add_room_screen.dart';
 import '../../features/admin/presentation/screens/admin_bookings_screen.dart';
 import '../../features/admin/presentation/screens/admin_reports_screen.dart';
 import '../../injection_container.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+      (dynamic _) => notifyListeners(),
+    );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -36,18 +58,25 @@ class AppRouter {
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
+    refreshListenable: GoRouterRefreshStream(getIt<AuthCubit>().stream),
     redirect: (context, state) {
-      final authState = context.read<AuthCubit>().state;
+      final authState = getIt<AuthCubit>().state;
       final isAuth = authState is AuthAuthenticated;
+      final isInitial = authState is AuthInitial;
       final isAuthRoute = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final isSplash = state.matchedLocation == '/splash';
+
+      if (isInitial) {
+        return isSplash ? null : '/splash';
+      }
 
       if (!isAuth && !isAuthRoute) return '/login';
       
       if (isAuth) {
         final isAdmin = authState.user.isAdmin;
         
-        // Prevent logged in user from going to login/register
-        if (isAuthRoute) {
+        // Prevent logged in user from going to login/register or splash
+        if (isAuthRoute || isSplash) {
           return isAdmin ? '/admin' : '/';
         }
         
@@ -65,6 +94,10 @@ class AppRouter {
     },
     routes: [
       // Auth routes (no bottom nav)
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
@@ -106,8 +139,8 @@ class AppRouter {
           ),
           GoRoute(
             path: '/admin',
-            builder: (context, state) => BlocProvider.value(
-              value: getIt<HotelCubit>()..loadHotels(),
+            builder: (context, state) => BlocProvider(
+              create: (_) => getIt<HotelCubit>()..loadHotels(),
               child: const AdminHotelsScreen(),
             ),
           ),
@@ -120,8 +153,8 @@ class AppRouter {
           ),
           GoRoute(
             path: '/admin/reports',
-            builder: (context, state) => BlocProvider.value(
-              value: getIt<BookingCubit>()..loadAllBookings(),
+            builder: (context, state) => BlocProvider(
+              create: (_) => getIt<BookingCubit>()..loadAllBookings(),
               child: const AdminReportsScreen(),
             ),
           ),
@@ -130,9 +163,36 @@ class AppRouter {
 
       // Full screen routes (no bottom nav)
       GoRoute(
+        path: '/admin/add-hotel',
+        builder: (context, state) {
+          final hotel = state.extra as HotelModel?;
+          return BlocProvider(
+            create: (_) => getIt<HotelCubit>(),
+            child: AdminAddHotelScreen(hotel: hotel),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/admin/hotels/:id/rooms',
+        builder: (context, state) => BlocProvider(
+          create: (_) => getIt<HotelCubit>()..loadHotelDetail(state.pathParameters['id']!),
+          child: AdminRoomsScreen(hotelId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/hotels/:id/add-room',
+        builder: (context, state) {
+          final room = state.extra as RoomModel?;
+          return BlocProvider(
+            create: (_) => getIt<HotelCubit>(),
+            child: AdminAddRoomScreen(hotelId: state.pathParameters['id']!, room: room),
+          );
+        },
+      ),
+      GoRoute(
         path: '/hotel/:id',
         builder: (context, state) => BlocProvider(
-          create: (_) => getIt<HotelCubit>(),
+          create: (_) => getIt<HotelCubit>()..loadHotelDetail(state.pathParameters['id']!),
           child: HotelDetailScreen(hotelId: state.pathParameters['id']!),
         ),
       ),
