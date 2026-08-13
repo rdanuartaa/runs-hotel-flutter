@@ -21,16 +21,51 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Laporan & Keuangan', style: AppTextStyles.h3),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: BlocBuilder<BookingCubit, BookingState>(
-        builder: (context, state) {
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[800] : Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.arrow_back, color: textColor, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Laporan & Keuangan',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<BookingCubit, BookingState>(
+                builder: (context, state) {
           if (state is BookingLoading || state is BookingInitial) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -59,6 +94,10 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           
           return const SizedBox();
         },
+      ),
+            ),
+          ],
+        ),
       ),
     );
   }

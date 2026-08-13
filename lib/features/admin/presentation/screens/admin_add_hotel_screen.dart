@@ -327,14 +327,12 @@ class _AdminAddHotelScreenState extends State<AdminAddHotelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(widget.hotel != null ? 'Edit Hotel' : 'Tambah Hotel', style: AppTextStyles.h3),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      backgroundColor: bgColor,
       body: BlocConsumer<HotelCubit, HotelState>(
         listener: (context, state) {
           if (state is HotelError) {
@@ -342,11 +340,48 @@ class _AdminAddHotelScreenState extends State<AdminAddHotelScreen> {
           }
         },
         builder: (context, state) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
+          return SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => context.pop(),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[800] : Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(Icons.arrow_back, color: textColor, size: 20),
+                        ),
+                      ),
+                      const Gap(16),
+                      Text(
+                        widget.hotel != null ? 'Edit Hotel' : 'Tambah Hotel',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Auto-fill section
@@ -602,9 +637,14 @@ class _AdminAddHotelScreenState extends State<AdminAddHotelScreen> {
                     onPressed: _handleSubmit,
                   ),
                   const Gap(32),
+                  const Gap(32),
                 ],
               ),
             ),
+          ),
+          ),
+          ],
+          ),
           );
         },
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
 import '../../data/models/room_model.dart';
@@ -17,12 +16,25 @@ class RoomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+    final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -49,53 +61,36 @@ class RoomCard extends StatelessWidget {
                     ),
                     child: Text(
                       room.roomTypeDisplay,
-                      style: AppTextStyles.caption.copyWith(
+                      style: TextStyle(
                         color: _roomTypeColor,
                         fontWeight: FontWeight.w600,
+                        fontSize: 11,
                       ),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     room.name,
-                    style: AppTextStyles.labelLarge,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                      Icon(Icons.person_outline, size: 14, color: subtextColor),
                       const SizedBox(width: 4),
                       Text(
                         'Maks. ${room.maxGuests} tamu',
-                        style: AppTextStyles.bodySmall,
+                        style: TextStyle(color: subtextColor, fontSize: 12),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (room.amenities.isNotEmpty) ...[
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: room.amenities.map((amenity) {
-                          return Container(
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceVariant,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              amenity,
-                              style: AppTextStyles.caption.copyWith(fontSize: 10),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -104,9 +99,16 @@ class RoomCard extends StatelessWidget {
                         children: [
                           Text(
                             CurrencyFormatter.format(room.pricePerNight),
-                            style: AppTextStyles.priceSmall,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
-                          Text('/malam', style: AppTextStyles.caption),
+                          Text(
+                            '/malam',
+                            style: TextStyle(color: subtextColor, fontSize: 11),
+                          ),
                         ],
                       ),
                       GestureDetector(
@@ -117,13 +119,15 @@ class RoomCard extends StatelessWidget {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary,
+                            color: accentColor,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Pilih',
-                            style: AppTextStyles.labelMedium.copyWith(
+                            style: TextStyle(
                               color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
                             ),
                           ),
                         ),
@@ -146,7 +150,7 @@ class RoomCard extends StatelessWidget {
       case 'suite':
         return const Color(0xFF7C3AED);
       case 'deluxe':
-        return AppColors.primary;
+        return const Color(0xFF7B6649);
       default:
         return AppColors.success;
     }

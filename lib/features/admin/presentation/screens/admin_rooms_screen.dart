@@ -26,21 +26,56 @@ class _AdminRoomsScreenState extends State<AdminRoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Kelola Kamar', style: AppTextStyles.h3),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: BlocConsumer<HotelCubit, HotelState>(
-        listener: (context, state) {
-          if (state is HotelError) {
-            DialogUtils.showError(context, state.message);
-          }
-        },
-        builder: (context, state) {
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[800] : Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.arrow_back, color: textColor, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Kelola Kamar',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: BlocConsumer<HotelCubit, HotelState>(
+                listener: (context, state) {
+                  if (state is HotelError) {
+                    DialogUtils.showError(context, state.message);
+                  }
+                },
+                builder: (context, state) {
           if (state is HotelLoading || state is HotelInitial) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -160,6 +195,10 @@ class _AdminRoomsScreenState extends State<AdminRoomsScreen> {
           }
           return const SizedBox();
         },
+      ),
+      ),
+      ],
+      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

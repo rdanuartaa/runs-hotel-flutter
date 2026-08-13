@@ -32,8 +32,6 @@ import '../../features/admin/presentation/screens/admin_add_room_screen.dart';
 import '../../features/admin/presentation/screens/admin_bookings_screen.dart';
 import '../../features/admin/presentation/screens/admin_reports_screen.dart';
 import '../../injection_container.dart';
-import '../constants/app_colors.dart';
-import '../constants/app_text_styles.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
@@ -287,8 +285,8 @@ class _MainShell extends StatelessWidget {
       return 0;
     } else {
       if (location == '/') return 0;
-      if (location == '/hotels') return 1;
-      if (location == '/bookings') return 2;
+      if (location == '/bookings') return 1;
+      if (location == '/hotels') return 2;
       if (location == '/profile') return 3;
       return 0;
     }
@@ -299,18 +297,18 @@ class _MainShell extends StatelessWidget {
     final authState = context.watch<AuthCubit>().state;
     final isAdmin = authState is AuthAuthenticated && authState.user.isAdmin;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final navBgColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final selectedColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+
     return Scaffold(
+      backgroundColor: bgColor,
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
+          color: navBgColor,
+          border: Border(top: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
         ),
         child: NavigationBar(
           selectedIndex: _currentIndex(context, isAdmin),
@@ -331,60 +329,61 @@ class _MainShell extends StatelessWidget {
                 case 0:
                   context.go('/');
                 case 1:
-                  context.go('/hotels');
-                case 2:
                   context.go('/bookings');
+                case 2:
+                  context.go('/hotels');
                 case 3:
                   context.go('/profile');
               }
             }
           },
-          backgroundColor: Colors.transparent,
+          backgroundColor: navBgColor,
           elevation: 0,
-          indicatorColor: AppColors.primarySurface,
+          indicatorColor: Colors.transparent, // Remove pill background
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: isAdmin 
-          ? const [
+          ? [
               NavigationDestination(
-                icon: Icon(Icons.hotel_outlined),
-                selectedIcon: Icon(Icons.hotel, color: AppColors.primary),
+                icon: const Icon(Icons.hotel_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.hotel, color: selectedColor),
                 label: 'Kelola Hotel',
               ),
               NavigationDestination(
-                icon: Icon(Icons.list_alt_outlined),
-                selectedIcon: Icon(Icons.list_alt, color: AppColors.primary),
+                icon: const Icon(Icons.list_alt_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.list_alt, color: selectedColor),
                 label: 'Pesanan',
               ),
               NavigationDestination(
-                icon: Icon(Icons.attach_money_outlined),
-                selectedIcon: Icon(Icons.attach_money, color: AppColors.primary),
+                icon: const Icon(Icons.attach_money_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.attach_money, color: selectedColor),
                 label: 'Laporan',
               ),
               NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
+                icon: const Icon(Icons.person_outline, color: Colors.grey),
+                selectedIcon: Icon(Icons.person_rounded, color: selectedColor),
                 label: 'Profil Admin',
               ),
             ]
-          : const [
+          : [
               NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded, color: AppColors.primary),
+                icon: const Icon(Icons.home_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.home, color: selectedColor),
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Icon(Icons.search_outlined),
-                selectedIcon: Icon(Icons.search_rounded, color: AppColors.primary),
-                label: 'Cari',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.bookmark_border_rounded),
-                selectedIcon: Icon(Icons.bookmark_rounded, color: AppColors.primary),
+                icon: const Icon(Icons.book_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.book, color: selectedColor),
                 label: 'Booking',
               ),
               NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
-                label: 'Profil',
+                icon: const Icon(Icons.bed_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.bed, color: selectedColor),
+                label: 'Rooms',
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.person_outline, color: Colors.grey),
+                selectedIcon: Icon(Icons.person, color: selectedColor),
+                label: 'Account',
               ),
             ],
         ),

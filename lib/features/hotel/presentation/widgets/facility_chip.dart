@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 
 class FacilityChip extends StatelessWidget {
   final String facility;
@@ -16,15 +14,18 @@ class FacilityChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.primarySurface,
+          color: isSelected ? accentColor : accentColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.primarySurface,
+            color: isSelected ? accentColor : accentColor.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -33,14 +34,15 @@ class FacilityChip extends StatelessWidget {
             Icon(
               _facilityIcon,
               size: 16,
-              color: isSelected ? Colors.white : AppColors.primary,
+              color: isSelected ? Colors.white : accentColor,
             ),
             const SizedBox(width: 6),
             Text(
               facility,
-              style: AppTextStyles.labelMedium.copyWith(
-                color: isSelected ? Colors.white : AppColors.primary,
+              style: TextStyle(
+                color: isSelected ? Colors.white : accentColor,
                 fontWeight: FontWeight.w500,
+                fontSize: 12,
               ),
             ),
           ],

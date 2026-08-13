@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gap/gap.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../cubit/hotel_cubit.dart';
 import '../widgets/hotel_card.dart';
@@ -54,7 +50,11 @@ class _HotelListScreenState extends State<HotelListScreen> {
   }
 
   void _showFilterBottomSheet() {
-    // Local state for bottom sheet
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+
     RangeValues currentRange = RangeValues(
       _minPrice?.toDouble() ?? 0,
       _maxPrice?.toDouble() ?? 5000000,
@@ -65,6 +65,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -77,24 +78,50 @@ class _HotelListScreenState extends State<HotelListScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const Gap(16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Filter Harga & Jarak', style: AppTextStyles.h4),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
+                      Text(
+                        'Filter Harga & Jarak',
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.close, color: textColor, size: 18),
+                        ),
                       ),
                     ],
                   ),
-                  const Gap(16),
-                  Text('Rentang Harga', style: AppTextStyles.labelLarge),
+                  const Gap(20),
+                  Text('Rentang Harga', style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
                   const Gap(8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Rp ${currentRange.start.toInt()}'),
-                      Text('Rp ${currentRange.end.toInt()}'),
+                      Text('Rp ${currentRange.start.toInt()}', style: TextStyle(color: textColor, fontSize: 12)),
+                      Text('Rp ${currentRange.end.toInt()}', style: TextStyle(color: textColor, fontSize: 12)),
                     ],
                   ),
                   RangeSlider(
@@ -102,7 +129,8 @@ class _HotelListScreenState extends State<HotelListScreen> {
                     min: 0,
                     max: 5000000,
                     divisions: 100,
-                    activeColor: AppColors.primary,
+                    activeColor: accentColor,
+                    inactiveColor: accentColor.withValues(alpha: 0.2),
                     onChanged: (values) {
                       setModalState(() {
                         currentRange = values;
@@ -110,65 +138,47 @@ class _HotelListScreenState extends State<HotelListScreen> {
                     },
                   ),
                   const Gap(16),
-                  Text('Urutkan', style: AppTextStyles.labelLarge),
+                  Text('Urutkan', style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
                   const Gap(8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      ChoiceChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text('Terdekat '),
-                            Icon(Icons.location_on, size: 16),
-                          ],
-                        ),
-                        selected: currentSortDistance,
-                        onSelected: (selected) {
+                      _buildFilterChip(
+                        label: 'Terdekat',
+                        icon: Icons.location_on,
+                        isSelected: currentSortDistance,
+                        accentColor: accentColor,
+                        onTap: () {
                           setModalState(() {
-                            currentSortDistance = selected;
-                            if (selected) currentSortPrice = null;
+                            currentSortDistance = !currentSortDistance;
+                            if (currentSortDistance) currentSortPrice = null;
                           });
                         },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
                       ),
-                      ChoiceChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text('Termurah '),
-                            Icon(Icons.arrow_upward, size: 16),
-                          ],
-                        ),
-                        selected: currentSortPrice == true,
-                        onSelected: (selected) {
+                      _buildFilterChip(
+                        label: 'Termurah',
+                        icon: Icons.arrow_upward,
+                        isSelected: currentSortPrice == true,
+                        accentColor: accentColor,
+                        onTap: () {
                           setModalState(() {
-                            currentSortPrice = selected ? true : null;
-                            if (selected) currentSortDistance = false;
+                            currentSortPrice = currentSortPrice == true ? null : true;
+                            if (currentSortPrice != null) currentSortDistance = false;
                           });
                         },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
                       ),
-                      ChoiceChip(
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text('Termahal '),
-                            Icon(Icons.arrow_downward, size: 16),
-                          ],
-                        ),
-                        selected: currentSortPrice == false,
-                        onSelected: (selected) {
+                      _buildFilterChip(
+                        label: 'Termahal',
+                        icon: Icons.arrow_downward,
+                        isSelected: currentSortPrice == false,
+                        accentColor: accentColor,
+                        onTap: () {
                           setModalState(() {
-                            currentSortPrice = selected ? false : null;
-                            if (selected) currentSortDistance = false;
+                            currentSortPrice = currentSortPrice == false ? null : false;
+                            if (currentSortPrice != null) currentSortDistance = false;
                           });
                         },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
                       ),
                     ],
                   ),
@@ -176,8 +186,8 @@ class _HotelListScreenState extends State<HotelListScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTap: () {
                             setState(() {
                               _minPrice = null;
                               _maxPrice = null;
@@ -187,17 +197,22 @@ class _HotelListScreenState extends State<HotelListScreen> {
                             Navigator.pop(context);
                             _loadHotels();
                           },
-                          child: const Text('Reset'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+                            ),
+                            child: Center(
+                              child: Text('Reset', style: TextStyle(color: accentColor, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
                         ),
                       ),
                       const Gap(16),
                       Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () {
+                        child: GestureDetector(
+                          onTap: () {
                             setState(() {
                               _minPrice = currentRange.start.toInt();
                               _maxPrice = currentRange.end.toInt();
@@ -207,7 +222,16 @@ class _HotelListScreenState extends State<HotelListScreen> {
                             Navigator.pop(context);
                             _loadHotels();
                           },
-                          child: const Text('Terapkan'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text('Terapkan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -222,6 +246,43 @@ class _HotelListScreenState extends State<HotelListScreen> {
     );
   }
 
+  Widget _buildFilterChip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? accentColor : accentColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? accentColor : accentColor.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : accentColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            const Gap(4),
+            Icon(icon, size: 16, color: isSelected ? Colors.white : accentColor),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -230,124 +291,183 @@ class _HotelListScreenState extends State<HotelListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+    final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        title: Text('Cari Hotel', style: AppTextStyles.h4),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Container(
-            color: AppColors.surface,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onSubmitted: (_) => _loadHotels(),
-                    decoration: InputDecoration(
-                      hintText: AppStrings.searchHint,
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textTertiary,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom header matching home screen style
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Cari Hotel',
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, color: AppColors.textSecondary),
-                              onPressed: () {
-                                _searchController.clear();
-                                _loadHotels();
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: AppColors.surfaceVariant,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
                   ),
-                ),
-                const Gap(8),
-                InkWell(
-                  onTap: _showFilterBottomSheet,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: (_minPrice != null || _sortByPriceAsc != null)
-                          ? AppColors.primary
-                          : AppColors.surfaceVariant,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      Icons.tune,
-                      color: (_minPrice != null || _sortByPriceAsc != null)
-                          ? Colors.white
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // Results
-          Expanded(
-            child: BlocBuilder<HotelCubit, HotelState>(
-              builder: (context, state) {
-                if (state is HotelLoading || state is HotelInitial) {
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: 3,
-                    itemBuilder: (_, __) => const HotelCardShimmer(),
-                  );
-                }
 
-                if (state is HotelError) {
-                  return ErrorStateWidget(
-                    message: state.message,
-                    onRetry: _loadHotels,
-                  );
-                }
+            // Search bar matching home design
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onSubmitted: (_) => _loadHotels(),
+                        style: TextStyle(color: textColor, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Search for our nearby hotel',
+                          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                          prefixIcon: Icon(Icons.search, color: Colors.grey[500], size: 20),
+                          suffixIcon: _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear, color: Colors.grey[500], size: 18),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    _loadHotels();
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Gap(8),
+                  GestureDetector(
+                    onTap: _showFilterBottomSheet,
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: (_minPrice != null || _sortByPriceAsc != null || _sortByDistance)
+                            ? accentColor
+                            : cardColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.tune,
+                        color: (_minPrice != null || _sortByPriceAsc != null || _sortByDistance)
+                            ? Colors.white
+                            : subtextColor,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
-                if (state is HotelListLoaded) {
-                  if (state.hotels.isEmpty) {
-                    return const EmptyStateWidget(
-                      icon: Icons.hotel_outlined,
-                      title: 'Hotel tidak ditemukan',
-                      subtitle: 'Coba sesuaikan filter atau kata kunci',
+            const Gap(8),
+
+            // Results
+            Expanded(
+              child: BlocBuilder<HotelCubit, HotelState>(
+                builder: (context, state) {
+                  if (state is HotelLoading || state is HotelInitial) {
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: 3,
+                      itemBuilder: (_, __) => const HotelCardShimmer(),
                     );
                   }
 
-                  return RefreshIndicator(
-                    onRefresh: () async => _loadHotels(),
-                    color: AppColors.primary,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: state.hotels.length,
-                      itemBuilder: (context, index) {
-                        return HotelCard(
-                          hotel: state.hotels[index],
-                          index: index,
-                        );
-                      },
-                    ),
-                  );
-                }
+                  if (state is HotelError) {
+                    return ErrorStateWidget(
+                      message: state.message,
+                      onRetry: _loadHotels,
+                    );
+                  }
 
-                return const SizedBox.shrink();
-              },
+                  if (state is HotelListLoaded) {
+                    if (state.hotels.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.hotel_outlined, size: 64, color: subtextColor),
+                            const Gap(16),
+                            Text(
+                              'Hotel tidak ditemukan',
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Gap(8),
+                            Text(
+                              'Coba sesuaikan filter atau kata kunci',
+                              style: TextStyle(color: subtextColor, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () async => _loadHotels(),
+                      color: accentColor,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: state.hotels.length,
+                        itemBuilder: (context, index) {
+                          return HotelCard(
+                            hotel: state.hotels[index],
+                            index: index,
+                          );
+                        },
+                      ),
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

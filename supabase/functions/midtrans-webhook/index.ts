@@ -5,6 +5,78 @@ import { GoogleAuth } from "npm:google-auth-library";
 
 const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY")!;
 
+async function sendNotification(
+  supabase: any,
+  userId: string,
+  title: string,
+  bodyText: string,
+  dataPayload: any,
+  orderId: string
+) {
+  const { data: user } = await supabase
+    .from("users")
+    .select("fcm_token")
+    .eq("id", userId)
+    .single();
+
+  if (user && user.fcm_token) {
+    const serviceAccount = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
+    const clientEmail = serviceAccount.client_email;
+    const privateKey = serviceAccount.private_key;
+    const projectId = serviceAccount.project_id;
+
+    if (clientEmail && privateKey && projectId) {
+      try {
+        const auth = new GoogleAuth({
+          credentials: {
+            client_email: clientEmail,
+            private_key: privateKey,
+          },
+          scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+        });
+
+        const client = await auth.getClient();
+        const accessToken = await client.getAccessToken();
+
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken.token}`,
+            },
+            body: JSON.stringify({
+              message: {
+                token: user.fcm_token,
+                notification: {
+                  title: title,
+                  body: bodyText,
+                },
+                data: dataPayload,
+              },
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error("FCM Send Error:", errText);
+          await supabase.from("payments").update({ payment_type: 'FCM_ERROR: ' + errText.substring(0, 50) }).eq("midtrans_order_id", orderId);
+        } else {
+          console.log("FCM Notification sent successfully!");
+          await supabase.from("payments").update({ payment_type: 'FCM_SUCCESS' }).eq("midtrans_order_id", orderId);
+        }
+      } catch (e) {
+        console.error("Error sending FCM:", e);
+        await supabase.from("payments").update({ payment_type: 'FCM_CATCH: ' + e.message.substring(0, 50) }).eq("midtrans_order_id", orderId);
+      }
+    } else {
+       console.log("Firebase secrets are not fully set in Supabase.");
+    }
+  }
+}
+
 serve(async (req) => {
   try {
     const body = await req.json();
@@ -33,7 +105,7 @@ serve(async (req) => {
     if (status === "capture" && fraudStatus === "accept") paymentStatus = "capture";
     else if (status === "settlement") paymentStatus = "settlement";
     else if (["deny", "cancel", "expire"].includes(status)) paymentStatus = status;
-    else if (status === "refund") paymentStatus = "refund";
+    else if (status === "refund" || status === "partial_refund") paymentStatus = "refund";
 
     // Update payment record
     await supabase
@@ -47,106 +119,60 @@ serve(async (req) => {
       })
       .eq("midtrans_order_id", body.order_id);
 
-    // Update booking status on successful payment
-    if (paymentStatus === "settlement" || paymentStatus === "capture") {
-      const { data: payment } = await supabase
-        .from("payments")
-        .select("booking_id, user_id")
-        .eq("midtrans_order_id", body.order_id)
-        .single();
+    // Get payment details to find user and booking
+    const { data: payment } = await supabase
+      .from("payments")
+      .select("booking_id, user_id")
+      .eq("midtrans_order_id", body.order_id)
+      .single();
 
-      if (payment) {
-        await supabase
-          .from("bookings")
-          .update({ status: "confirmed", updated_at: new Date().toISOString() })
-          .eq("id", payment.booking_id);
-
-        // Fetch user's FCM token
-        const { data: user } = await supabase
-          .from("users")
-          .select("fcm_token")
-          .eq("id", payment.user_id)
-          .single();
-
-        if (user && user.fcm_token) {
-          const serviceAccount = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
-          const clientEmail = serviceAccount.client_email;
-          const privateKey = serviceAccount.private_key;
-          const projectId = serviceAccount.project_id;
-
-          if (clientEmail && privateKey && projectId) {
-            try {
-              // Initialize GoogleAuth
-              const auth = new GoogleAuth({
-                credentials: {
-                  client_email: clientEmail,
-                  private_key: privateKey,
-                },
-                scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
-              });
-
-              // Get Access Token
-              const client = await auth.getClient();
-              const accessToken = await client.getAccessToken();
-
-              // Send Notification
-              const response = await fetch(
-                `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${accessToken.token}`,
-                  },
-                  body: JSON.stringify({
-                    message: {
-                      token: user.fcm_token,
-                      notification: {
-                        title: "Pembayaran Berhasil! 🎉",
-                        body: "Terima kasih, pembayaran Anda telah kami terima.",
-                      },
-                      data: {
-                        booking_id: payment.booking_id,
-                        type: "payment_success",
-                      },
-                    },
-                  }),
-                }
-              );
-
-              if (!response.ok) {
-                const errText = await response.text();
-                console.error("FCM Send Error:", errText);
-                await supabase.from("payments").update({ payment_type: 'FCM_ERROR: ' + errText.substring(0, 50) }).eq("midtrans_order_id", body.order_id);
-              } else {
-                console.log("FCM Notification sent successfully!");
-                await supabase.from("payments").update({ payment_type: 'FCM_SUCCESS' }).eq("midtrans_order_id", body.order_id);
-              }
-            } catch (e) {
-              console.error("Error sending FCM:", e);
-              await supabase.from("payments").update({ payment_type: 'FCM_CATCH: ' + e.message.substring(0, 50) }).eq("midtrans_order_id", body.order_id);
-            }
-          } else {
-             console.log("Firebase secrets are not fully set in Supabase.");
-          }
-        }
-      }
+    if (!payment) {
+      return new Response("Payment not found", { status: 404 });
     }
 
-    // Cancel booking on failed payment
-    if (["deny", "cancel", "expire"].includes(paymentStatus)) {
-      const { data: payment } = await supabase
-        .from("payments")
-        .select("booking_id")
-        .eq("midtrans_order_id", body.order_id)
-        .single();
+    // Update booking status and send notification based on payment status
+    if (paymentStatus === "settlement" || paymentStatus === "capture") {
+      await supabase
+        .from("bookings")
+        .update({ status: "confirmed", updated_at: new Date().toISOString() })
+        .eq("id", payment.booking_id);
 
-      if (payment) {
-        await supabase
-          .from("bookings")
-          .update({ status: "cancelled", updated_at: new Date().toISOString() })
-          .eq("id", payment.booking_id);
-      }
+      await sendNotification(
+        supabase,
+        payment.user_id,
+        "Pembayaran Berhasil! 🎉",
+        "Terima kasih, pembayaran Anda telah kami terima.",
+        { booking_id: payment.booking_id, type: "payment_success" },
+        body.order_id
+      );
+    } else if (["deny", "cancel", "expire"].includes(paymentStatus)) {
+      await supabase
+        .from("bookings")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("id", payment.booking_id);
+
+      await sendNotification(
+        supabase,
+        payment.user_id,
+        "Pembayaran Ditolak/Dibatalkan ❌",
+        "Mohon maaf, transaksi pembayaran Anda gagal atau telah dibatalkan.",
+        { booking_id: payment.booking_id, type: "payment_failed" },
+        body.order_id
+      );
+    } else if (paymentStatus === "refund") {
+      await supabase
+        .from("bookings")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() }) // Usually refunded means cancelled booking
+        .eq("id", payment.booking_id);
+
+      await sendNotification(
+        supabase,
+        payment.user_id,
+        "Refund Berhasil 💸",
+        "Dana Anda telah berhasil dikembalikan ke metode pembayaran awal.",
+        { booking_id: payment.booking_id, type: "payment_refunded" },
+        body.order_id
+      );
     }
 
     return new Response("OK", { status: 200 });

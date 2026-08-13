@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
 import '../../data/models/review_model.dart';
@@ -13,13 +11,25 @@ class ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+    final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,11 +52,15 @@ class ReviewCard extends StatelessWidget {
                   children: [
                     Text(
                       review.userName ?? 'Pengguna',
-                      style: AppTextStyles.labelLarge,
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     Text(
                       DateFormatter.relativeDate(review.createdAt),
-                      style: AppTextStyles.caption,
+                      style: TextStyle(color: subtextColor, fontSize: 11),
                     ),
                   ],
                 ),
@@ -59,15 +73,17 @@ class ReviewCard extends StatelessWidget {
             itemSize: 16,
             itemBuilder: (context, _) => const Icon(
               Icons.star_rounded,
-              color: AppColors.starRating,
+              color: Color(0xFFFFB800),
             ),
           ),
           if (review.comment != null && review.comment!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
               review.comment!,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: subtextColor,
+                fontSize: 14,
+                height: 1.5,
               ),
             ),
           ],

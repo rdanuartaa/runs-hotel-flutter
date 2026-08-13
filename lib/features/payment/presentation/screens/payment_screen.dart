@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/widgets/loading_widget.dart';
-import '../../../../core/utils/dialog_utils.dart';
 import '../../../booking/data/models/booking_model.dart';
 import '../cubit/payment_cubit.dart';
 
@@ -25,60 +21,48 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        title: Text('Pembayaran', style: AppTextStyles.h4),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
-      body: BlocListener<PaymentCubit, PaymentState>(
-        listener: (context, state) {
-          if (state is PaymentSnapReady) {
-            context.push('/payment-webview', extra: {
-              'redirectUrl': state.redirectUrl,
-              'bookingId': state.bookingId,
-            });
-          } else if (state is PaymentSuccess) {
-            context.go('/payment-status', extra: {'status': 'success'});
-          } else if (state is PaymentFailed) {
-            context.go('/payment-status', extra: {'status': 'failed'});
-          } else if (state is PaymentError) {
-            DialogUtils.showError(context, state.message);
-          }
-        },
-        child: BlocBuilder<PaymentCubit, PaymentState>(
-          builder: (context, state) {
-            if (state is PaymentError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(state.message, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => context.read<PaymentCubit>().createPayment(widget.booking.id),
-                      child: const Text('Coba Lagi'),
-                    ),
-                  ],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: BlocListener<PaymentCubit, PaymentState>(
+          listener: (context, state) {
+            if (state is PaymentSnapReady) {
+              context.push('/payment-webview', extra: {
+                'redirectUrl': state.redirectUrl,
+                'bookingId': state.bookingId,
+              });
+            } else if (state is PaymentSuccess) {
+              context.go('/payment-status', extra: {'status': 'success'});
+            } else if (state is PaymentFailed) {
+              context.go('/payment-status', extra: {'status': 'failed'});
+            } else if (state is PaymentError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: Colors.red[400],
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               );
             }
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  LoadingWidget(),
-                  SizedBox(height: 16),
-                  Text('Menyiapkan pembayaran...'),
-                ],
-              ),
-            );
           },
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: accentColor),
+                const SizedBox(height: 16),
+                Text(
+                  'Menyiapkan pembayaran...',
+                  style: TextStyle(color: textColor, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

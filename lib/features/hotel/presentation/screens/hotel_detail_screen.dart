@@ -4,13 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../cubit/hotel_cubit.dart';
-import '../widgets/hotel_card.dart';
 import '../widgets/room_card.dart';
 import '../widgets/review_card.dart';
 import '../widgets/facility_chip.dart';
@@ -34,12 +30,19 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+    final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: BlocBuilder<HotelCubit, HotelState>(
         builder: (context, state) {
           if (state is HotelLoading || state is HotelInitial) {
-            return const LoadingWidget();
+            return Center(
+              child: CircularProgressIndicator(color: accentColor),
+            );
           }
 
           if (state is HotelError) {
@@ -60,15 +63,23 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                 SliverAppBar(
                   expandedHeight: 300,
                   pinned: true,
-                  backgroundColor: AppColors.surface,
+                  backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
                   leading: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white.withValues(alpha: 0.9),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                        color: AppColors.textPrimary,
-                        onPressed: () => context.pop(),
+                    child: GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Colors.black87),
                       ),
                     ),
                   ),
@@ -95,17 +106,24 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(hotel.name, style: AppTextStyles.h2),
+                                  Text(
+                                    hotel.name,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   const Gap(6),
                                   Row(
                                     children: [
-                                      const Icon(Icons.location_on_outlined,
-                                          size: 16, color: AppColors.textSecondary),
+                                      Icon(Icons.location_on_outlined,
+                                          size: 16, color: subtextColor),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
                                           '${hotel.address}, ${hotel.city}',
-                                          style: AppTextStyles.bodySmall,
+                                          style: TextStyle(color: subtextColor, fontSize: 12),
                                         ),
                                       ),
                                     ],
@@ -117,20 +135,24 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: AppColors.primarySurface,
+                                color: accentColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
                                 children: [
                                   const Icon(Icons.star_rounded,
-                                      color: AppColors.starRating, size: 24),
+                                      color: Color(0xFFFFB800), size: 24),
                                   Text(
                                     hotel.avgRating.toStringAsFixed(1),
-                                    style: AppTextStyles.h4.copyWith(color: AppColors.primary),
+                                    style: TextStyle(
+                                      color: accentColor,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   Text(
                                     '${hotel.totalReviews} ulasan',
-                                    style: AppTextStyles.caption,
+                                    style: TextStyle(color: subtextColor, fontSize: 11),
                                   ),
                                 ],
                               ),
@@ -146,12 +168,16 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                               rating: hotel.starRating.toDouble(),
                               itemSize: 18,
                               itemBuilder: (context, _) =>
-                                  const Icon(Icons.star_rounded, color: AppColors.secondary),
+                                  const Icon(Icons.star_rounded, color: Color(0xFFFFB800)),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Hotel Bintang ${hotel.starRating}',
-                              style: AppTextStyles.labelMedium,
+                              style: TextStyle(
+                                color: subtextColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -159,13 +185,20 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         // Description
                         if (hotel.description != null && hotel.description!.isNotEmpty) ...[
                           const Gap(20),
-                          Text(AppStrings.description, style: AppTextStyles.h4)
-                              .animate().fadeIn(delay: 100.ms),
+                          Text(
+                            AppStrings.description,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ).animate().fadeIn(delay: 100.ms),
                           const Gap(8),
                           Text(
                             hotel.description!,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: subtextColor,
+                              fontSize: 14,
                               height: 1.6,
                             ),
                           ),
@@ -174,8 +207,14 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         // Facilities
                         if (hotel.facilities.isNotEmpty) ...[
                           const Gap(20),
-                          Text(AppStrings.facilities, style: AppTextStyles.h4)
-                              .animate().fadeIn(delay: 200.ms),
+                          Text(
+                            AppStrings.facilities,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ).animate().fadeIn(delay: 200.ms),
                           const Gap(12),
                           Wrap(
                             spacing: 8,
@@ -188,13 +227,27 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
 
                         // Rooms
                         const Gap(24),
-                        Text(AppStrings.rooms, style: AppTextStyles.h4)
-                            .animate().fadeIn(delay: 300.ms),
+                        Text(
+                          AppStrings.rooms,
+                          style: TextStyle(
+                            color: accentColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ).animate().fadeIn(delay: 300.ms),
                         const Gap(12),
                         if (rooms.isEmpty)
-                          const EmptyStateWidget(
-                            icon: Icons.bed_outlined,
-                            title: 'Tidak ada kamar tersedia',
+                          Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.bed_outlined, size: 48, color: subtextColor),
+                                const Gap(8),
+                                Text(
+                                  'Tidak ada kamar tersedia',
+                                  style: TextStyle(color: subtextColor, fontSize: 14),
+                                ),
+                              ],
+                            ),
                           )
                         else
                           ...rooms.map((room) => RoomCard(
@@ -213,19 +266,38 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(AppStrings.reviews, style: AppTextStyles.h4),
+                            Text(
+                              AppStrings.reviews,
+                              style: TextStyle(
+                                color: accentColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             Text(
                               '${reviews.length} ulasan',
-                              style: AppTextStyles.bodySmall,
+                              style: TextStyle(color: subtextColor, fontSize: 12),
                             ),
                           ],
                         ).animate().fadeIn(delay: 400.ms),
                         const Gap(12),
                         if (reviews.isEmpty)
-                          const EmptyStateWidget(
-                            icon: Icons.rate_review_outlined,
-                            title: 'Belum ada ulasan',
-                            subtitle: 'Jadilah yang pertama memberikan ulasan!',
+                          Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.rate_review_outlined, size: 48, color: subtextColor),
+                                const Gap(8),
+                                Text(
+                                  'Belum ada ulasan',
+                                  style: TextStyle(color: subtextColor, fontSize: 14),
+                                ),
+                                const Gap(4),
+                                Text(
+                                  'Jadilah yang pertama memberikan ulasan!',
+                                  style: TextStyle(color: subtextColor, fontSize: 12),
+                                ),
+                              ],
+                            ),
                           )
                         else
                           ...reviews.map((review) => ReviewCard(review: review)),

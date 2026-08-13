@@ -12,10 +12,15 @@ import 'features/payment/data/repositories/payment_repository.dart';
 import 'features/payment/presentation/cubit/payment_cubit.dart';
 import 'features/profile/data/repositories/profile_repository.dart';
 
+import 'core/theme/theme_cubit.dart';
+
 final getIt = GetIt.instance;
 
 Future<void> initDependencies() async {
   final client = SupabaseConfig.client;
+
+  // Theme
+  getIt.registerLazySingleton<ThemeCubit>(() => ThemeCubit());
 
   // Repositories
   getIt.registerLazySingleton<AuthRepository>(() => AuthRepository(client));

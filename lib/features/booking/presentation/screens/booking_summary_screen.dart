@@ -3,13 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/widgets/custom_button.dart';
-import '../../../../core/widgets/cached_image_widget.dart';
 import '../../../../core/utils/dialog_utils.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../hotel/data/models/hotel_model.dart';
@@ -40,50 +36,133 @@ class BookingSummaryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
+    final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
+    final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-        title: Text(AppStrings.bookingSummary, style: AppTextStyles.h4),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
-      body: BlocListener<BookingCubit, BookingState>(
-        listener: (context, state) {
-          if (state is BookingCreated) {
-            context.go('/payment', extra: {'booking': state.booking});
-          } else if (state is BookingError) {
-            DialogUtils.showError(context, state.message);
-          }
-        },
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Hotel info card
-              _buildHotelCard().animate().fadeIn(duration: 400.ms),
-              const Gap(16),
-              // Details card
-              _buildDetailsCard().animate().fadeIn(delay: 200.ms),
-              const Gap(16),
-              // Price card
-              _buildPriceCard().animate().fadeIn(delay: 400.ms),
-              const Gap(24),
-              // Pay button
-              BlocBuilder<BookingCubit, BookingState>(
-                builder: (context, state) {
-                  return CustomButton(
-                    text: AppStrings.payNow,
-                    isLoading: state is BookingLoading,
-                    icon: Icons.payment_rounded,
-                    onPressed: () => _handlePay(context),
-                  );
-                },
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom header with back button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                      child: Icon(Icons.arrow_back_ios_new, size: 16, color: textColor),
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Ringkasan Booking',
+                        style: TextStyle(
+                          color: accentColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                ],
               ),
-              const Gap(24),
-            ],
-          ),
+            ),
+
+            // Content
+            Expanded(
+              child: BlocListener<BookingCubit, BookingState>(
+                listener: (context, state) {
+                  if (state is BookingCreated) {
+                    context.go('/payment', extra: {'booking': state.booking});
+                  } else if (state is BookingError) {
+                    DialogUtils.showError(context, state.message);
+                  }
+                },
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      // Hotel info card
+                      _buildHotelCard(cardColor, textColor, subtextColor, accentColor, isDark)
+                          .animate().fadeIn(duration: 400.ms),
+                      const Gap(16),
+                      // Details card
+                      _buildDetailsCard(cardColor, textColor, subtextColor, accentColor, isDark)
+                          .animate().fadeIn(delay: 200.ms),
+                      const Gap(16),
+                      // Price card
+                      _buildPriceCard(accentColor, textColor)
+                          .animate().fadeIn(delay: 400.ms),
+                      const Gap(24),
+                      // Pay button
+                      BlocBuilder<BookingCubit, BookingState>(
+                        builder: (context, state) {
+                          return GestureDetector(
+                            onTap: state is BookingLoading ? null : () => _handlePay(context),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              decoration: BoxDecoration(
+                                color: accentColor,
+                                borderRadius: BorderRadius.circular(14),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: accentColor.withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: state is BookingLoading
+                                  ? const Center(child: SizedBox(
+                                      width: 24, height: 24,
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    ))
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.payment_rounded, color: Colors.white, size: 20),
+                                        Gap(8),
+                                        Text(
+                                          'Bayar Sekarang',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
+                      const Gap(24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -105,30 +184,57 @@ class BookingSummaryScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildHotelCard() {
+  Widget _buildHotelCard(Color cardColor, Color textColor, Color subtextColor, Color accentColor, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          CachedImageWidget(imageUrl: hotel.thumbnailUrl, width: 80, height: 80, borderRadius: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              hotel.thumbnailUrl ?? 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?q=80&w=500',
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 80,
+                height: 80,
+                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                child: Icon(Icons.hotel, color: subtextColor),
+              ),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(hotel.name, style: AppTextStyles.h4),
+                Text(hotel.name, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
                 const Gap(4),
-                Text(hotel.city, style: AppTextStyles.bodySmall),
+                Text(hotel.city, style: TextStyle(color: subtextColor, fontSize: 12)),
                 const Gap(4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(6)),
-                  child: Text(room.name, style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    room.name,
+                    style: TextStyle(color: accentColor, fontWeight: FontWeight.w600, fontSize: 10),
+                  ),
                 ),
               ],
             ),
@@ -138,39 +244,62 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailsCard() {
+  Widget _buildDetailsCard(Color cardColor, Color textColor, Color subtextColor, Color accentColor, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          _row(Icons.calendar_today_outlined, AppStrings.checkIn, DateFormatter.full(checkIn)),
-          const Divider(color: AppColors.divider, height: 20),
-          _row(Icons.calendar_today_outlined, AppStrings.checkOut, DateFormatter.full(checkOut)),
-          const Divider(color: AppColors.divider, height: 20),
-          _row(Icons.nights_stay_outlined, 'Durasi', '$totalNights malam'),
-          const Divider(color: AppColors.divider, height: 20),
-          _row(Icons.person_outlined, AppStrings.guests, '$guests orang'),
+          _row(Icons.calendar_today_outlined, AppStrings.checkIn, DateFormatter.full(checkIn), accentColor, textColor, subtextColor),
+          Divider(color: Colors.grey.withValues(alpha: 0.2), height: 20),
+          _row(Icons.calendar_today_outlined, AppStrings.checkOut, DateFormatter.full(checkOut), accentColor, textColor, subtextColor),
+          Divider(color: Colors.grey.withValues(alpha: 0.2), height: 20),
+          _row(Icons.nights_stay_outlined, 'Durasi', '$totalNights malam', accentColor, textColor, subtextColor),
+          Divider(color: Colors.grey.withValues(alpha: 0.2), height: 20),
+          _row(Icons.person_outlined, AppStrings.guests, '$guests orang', accentColor, textColor, subtextColor),
         ],
       ),
     );
   }
 
-  Widget _buildPriceCard() {
+  Widget _buildPriceCard(Color accentColor, Color textColor) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: accentColor,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${room.name} x $totalNights malam', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70)),
-              Text(CurrencyFormatter.format(totalPrice), style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70)),
+              Text(
+                '${room.name} x $totalNights malam',
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              Text(
+                CurrencyFormatter.format(totalPrice),
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
             ],
           ),
           const Gap(12),
@@ -179,8 +308,14 @@ class BookingSummaryScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppStrings.totalPrice, style: AppTextStyles.h4.copyWith(color: Colors.white)),
-              Text(CurrencyFormatter.format(totalPrice), style: AppTextStyles.h3.copyWith(color: Colors.white)),
+              const Text(
+                'Total',
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                CurrencyFormatter.format(totalPrice),
+                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ],
@@ -188,16 +323,16 @@ class BookingSummaryScreen extends StatelessWidget {
     );
   }
 
-  Widget _row(IconData icon, String label, String value) {
+  Widget _row(IconData icon, String label, String value, Color accentColor, Color textColor, Color subtextColor) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.primary),
+        Icon(icon, size: 18, color: accentColor),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: AppTextStyles.labelMedium),
-            Text(value, style: AppTextStyles.bodyMedium),
+            Text(label, style: TextStyle(color: subtextColor, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(value, style: TextStyle(color: textColor, fontSize: 14)),
           ],
         ),
       ],
