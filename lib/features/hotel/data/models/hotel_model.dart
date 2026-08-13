@@ -18,6 +18,7 @@ class HotelModel extends Equatable {
   final DateTime createdAt;
   final List<String>? imageUrls;
   final int? minPrice;
+  final double? distanceInMeters;
 
   const HotelModel({
     required this.id,
@@ -37,6 +38,7 @@ class HotelModel extends Equatable {
     required this.createdAt,
     this.imageUrls,
     this.minPrice,
+    this.distanceInMeters,
   });
 
   factory HotelModel.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,49 @@ class HotelModel extends Equatable {
           ?.map((e) => (e as Map<String, dynamic>)['image_url'] as String)
           .toList(),
       minPrice: json['min_price'] as int?,
+      distanceInMeters: (json['distanceInMeters'] as num?)?.toDouble(),
+    );
+  }
+
+  HotelModel copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? address,
+    String? city,
+    String? province,
+    double? latitude,
+    double? longitude,
+    int? starRating,
+    String? thumbnailUrl,
+    double? avgRating,
+    int? totalReviews,
+    List<String>? facilities,
+    bool? isActive,
+    DateTime? createdAt,
+    List<String>? imageUrls,
+    int? minPrice,
+    double? distanceInMeters,
+  }) {
+    return HotelModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      address: address ?? this.address,
+      city: city ?? this.city,
+      province: province ?? this.province,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      starRating: starRating ?? this.starRating,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      avgRating: avgRating ?? this.avgRating,
+      totalReviews: totalReviews ?? this.totalReviews,
+      facilities: facilities ?? this.facilities,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      imageUrls: imageUrls ?? this.imageUrls,
+      minPrice: minPrice ?? this.minPrice,
+      distanceInMeters: distanceInMeters ?? this.distanceInMeters,
     );
   }
 

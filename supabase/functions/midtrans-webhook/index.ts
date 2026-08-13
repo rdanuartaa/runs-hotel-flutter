@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { crypto } from "https://deno.land/std@0.177.0/crypto/mod.ts";
+import { GoogleAuth } from "npm:google-auth-library";
 
 const MIDTRANS_SERVER_KEY = Deno.env.get("MIDTRANS_SERVER_KEY")!;
 
@@ -50,7 +51,7 @@ serve(async (req) => {
     if (paymentStatus === "settlement" || paymentStatus === "capture") {
       const { data: payment } = await supabase
         .from("payments")
-        .select("booking_id")
+        .select("booking_id, user_id")
         .eq("midtrans_order_id", body.order_id)
         .single();
 
@@ -59,6 +60,76 @@ serve(async (req) => {
           .from("bookings")
           .update({ status: "confirmed", updated_at: new Date().toISOString() })
           .eq("id", payment.booking_id);
+
+        // Fetch user's FCM token
+        const { data: user } = await supabase
+          .from("users")
+          .select("fcm_token")
+          .eq("id", payment.user_id)
+          .single();
+
+        if (user && user.fcm_token) {
+          const serviceAccount = JSON.parse(Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "{}");
+          const clientEmail = serviceAccount.client_email;
+          const privateKey = serviceAccount.private_key;
+          const projectId = serviceAccount.project_id;
+
+          if (clientEmail && privateKey && projectId) {
+            try {
+              // Initialize GoogleAuth
+              const auth = new GoogleAuth({
+                credentials: {
+                  client_email: clientEmail,
+                  private_key: privateKey,
+                },
+                scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+              });
+
+              // Get Access Token
+              const client = await auth.getClient();
+              const accessToken = await client.getAccessToken();
+
+              // Send Notification
+              const response = await fetch(
+                `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accessToken.token}`,
+                  },
+                  body: JSON.stringify({
+                    message: {
+                      token: user.fcm_token,
+                      notification: {
+                        title: "Pembayaran Berhasil! 🎉",
+                        body: "Terima kasih, pembayaran Anda telah kami terima.",
+                      },
+                      data: {
+                        booking_id: payment.booking_id,
+                        type: "payment_success",
+                      },
+                    },
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                const errText = await response.text();
+                console.error("FCM Send Error:", errText);
+                await supabase.from("payments").update({ payment_type: 'FCM_ERROR: ' + errText.substring(0, 50) }).eq("midtrans_order_id", body.order_id);
+              } else {
+                console.log("FCM Notification sent successfully!");
+                await supabase.from("payments").update({ payment_type: 'FCM_SUCCESS' }).eq("midtrans_order_id", body.order_id);
+              }
+            } catch (e) {
+              console.error("Error sending FCM:", e);
+              await supabase.from("payments").update({ payment_type: 'FCM_CATCH: ' + e.message.substring(0, 50) }).eq("midtrans_order_id", body.order_id);
+            }
+          } else {
+             console.log("Firebase secrets are not fully set in Supabase.");
+          }
+        }
       }
     }
 

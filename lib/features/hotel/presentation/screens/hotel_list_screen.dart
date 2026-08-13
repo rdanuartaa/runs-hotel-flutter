@@ -27,6 +27,10 @@ class HotelListScreen extends StatefulWidget {
 
 class _HotelListScreenState extends State<HotelListScreen> {
   final _searchController = TextEditingController();
+  int? _minPrice;
+  int? _maxPrice;
+  bool? _sortByPriceAsc;
+  bool _sortByDistance = false;
 
   @override
   void initState() {
@@ -42,7 +46,180 @@ class _HotelListScreenState extends State<HotelListScreen> {
           search: _searchController.text.isEmpty ? null : _searchController.text,
           city: widget.city,
           starRating: widget.starRating,
+          minPrice: _minPrice,
+          maxPrice: _maxPrice,
+          sortByPriceAsc: _sortByPriceAsc,
+          sortByDistance: _sortByDistance,
         );
+  }
+
+  void _showFilterBottomSheet() {
+    // Local state for bottom sheet
+    RangeValues currentRange = RangeValues(
+      _minPrice?.toDouble() ?? 0,
+      _maxPrice?.toDouble() ?? 5000000,
+    );
+    bool? currentSortPrice = _sortByPriceAsc;
+    bool currentSortDistance = _sortByDistance;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Filter Harga & Jarak', style: AppTextStyles.h4),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const Gap(16),
+                  Text('Rentang Harga', style: AppTextStyles.labelLarge),
+                  const Gap(8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Rp ${currentRange.start.toInt()}'),
+                      Text('Rp ${currentRange.end.toInt()}'),
+                    ],
+                  ),
+                  RangeSlider(
+                    values: currentRange,
+                    min: 0,
+                    max: 5000000,
+                    divisions: 100,
+                    activeColor: AppColors.primary,
+                    onChanged: (values) {
+                      setModalState(() {
+                        currentRange = values;
+                      });
+                    },
+                  ),
+                  const Gap(16),
+                  Text('Urutkan', style: AppTextStyles.labelLarge),
+                  const Gap(8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text('Terdekat '),
+                            Icon(Icons.location_on, size: 16),
+                          ],
+                        ),
+                        selected: currentSortDistance,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            currentSortDistance = selected;
+                            if (selected) currentSortPrice = null;
+                          });
+                        },
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                      ChoiceChip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text('Termurah '),
+                            Icon(Icons.arrow_upward, size: 16),
+                          ],
+                        ),
+                        selected: currentSortPrice == true,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            currentSortPrice = selected ? true : null;
+                            if (selected) currentSortDistance = false;
+                          });
+                        },
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                      ChoiceChip(
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text('Termahal '),
+                            Icon(Icons.arrow_downward, size: 16),
+                          ],
+                        ),
+                        selected: currentSortPrice == false,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            currentSortPrice = selected ? false : null;
+                            if (selected) currentSortDistance = false;
+                          });
+                        },
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                        checkmarkColor: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                  const Gap(24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              _minPrice = null;
+                              _maxPrice = null;
+                              _sortByPriceAsc = null;
+                              _sortByDistance = false;
+                            });
+                            Navigator.pop(context);
+                            _loadHotels();
+                          },
+                          child: const Text('Reset'),
+                        ),
+                      ),
+                      const Gap(16),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _minPrice = currentRange.start.toInt();
+                              _maxPrice = currentRange.end.toInt();
+                              _sortByPriceAsc = currentSortPrice;
+                              _sortByDistance = currentSortDistance;
+                            });
+                            Navigator.pop(context);
+                            _loadHotels();
+                          },
+                          child: const Text('Terapkan'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Gap(16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -68,32 +245,58 @@ class _HotelListScreenState extends State<HotelListScreen> {
           Container(
             color: AppColors.surface,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: TextField(
-              controller: _searchController,
-              onSubmitted: (_) => _loadHotels(),
-              decoration: InputDecoration(
-                hintText: AppStrings.searchHint,
-                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textTertiary,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onSubmitted: (_) => _loadHotels(),
+                    decoration: InputDecoration(
+                      hintText: AppStrings.searchHint,
+                      hintStyle: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                      prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: AppColors.textSecondary),
+                              onPressed: () {
+                                _searchController.clear();
+                                _loadHotels();
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.surfaceVariant,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
                 ),
-                prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textSecondary),
-                        onPressed: () {
-                          _searchController.clear();
-                          _loadHotels();
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: AppColors.surfaceVariant,
-                border: OutlineInputBorder(
+                const Gap(8),
+                InkWell(
+                  onTap: _showFilterBottomSheet,
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: (_minPrice != null || _sortByPriceAsc != null)
+                          ? AppColors.primary
+                          : AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      Icons.tune,
+                      color: (_minPrice != null || _sortByPriceAsc != null)
+                          ? Colors.white
+                          : AppColors.textSecondary,
+                    ),
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              ),
+              ],
             ),
           ),
           // Results
@@ -120,7 +323,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                     return const EmptyStateWidget(
                       icon: Icons.hotel_outlined,
                       title: 'Hotel tidak ditemukan',
-                      subtitle: 'Coba cari dengan kata kunci lain',
+                      subtitle: 'Coba sesuaikan filter atau kata kunci',
                     );
                   }
 

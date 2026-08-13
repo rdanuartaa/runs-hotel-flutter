@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/services/location_service.dart';
 import '../../data/models/hotel_model.dart';
 import '../../data/models/room_model.dart';
 import '../../data/models/review_model.dart';
@@ -17,14 +18,45 @@ class HotelCubit extends Cubit<HotelState> {
     String? search,
     String? city,
     int? starRating,
+    int? minPrice,
+    int? maxPrice,
+    bool? sortByPriceAsc,
+    bool sortByDistance = false,
   }) async {
     emit(const HotelLoading());
     try {
-      final hotels = await _hotelRepository.getHotels(
+      var hotels = await _hotelRepository.getHotels(
         search: search,
         city: city,
         starRating: starRating,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        sortByPriceAsc: sortByPriceAsc,
       );
+
+      // Get user location to calculate distance
+      final position = await LocationService.getCurrentLocation();
+      if (position != null) {
+        hotels = hotels.map((hotel) {
+          if (hotel.latitude != null && hotel.longitude != null) {
+            final distance = LocationService.calculateDistance(
+              position.latitude,
+              position.longitude,
+              hotel.latitude!,
+              hotel.longitude!,
+            );
+            return hotel.copyWith(distanceInMeters: distance);
+          }
+          return hotel;
+        }).toList();
+
+        // Sort by distance if requested and not sorting by price
+        if (sortByDistance && sortByPriceAsc == null) {
+          hotels.sort((a, b) => (a.distanceInMeters ?? 999999999)
+              .compareTo(b.distanceInMeters ?? 999999999));
+        }
+      }
+
       emit(HotelListLoaded(hotels));
     } catch (e) {
       emit(HotelError(e.toString()));

@@ -22,6 +22,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String _selectedCategory = 'Semua';
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () async => context.read<HomeCubit>().loadHomeData(),
+          onRefresh: () async => context.read<HomeCubit>().loadHomeData(category: _selectedCategory),
           color: AppColors.primary,
           child: CustomScrollView(
             slivers: [
@@ -66,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (state is HomeError) {
                       return ErrorStateWidget(
                         message: state.message,
-                        onRetry: () => context.read<HomeCubit>().loadHomeData(),
+                        onRetry: () => context.read<HomeCubit>().loadHomeData(category: _selectedCategory),
                       );
                     }
 
@@ -226,24 +228,30 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final cat = categories[index];
-          final isFirst = index == 0;
+          final isSelected = _selectedCategory == cat['label'];
+          
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
               label: Text(cat['label'] as String),
-              selected: isFirst,
-              onSelected: (_) {
-                // TODO: Filter by category
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected && _selectedCategory != cat['label']) {
+                  setState(() {
+                    _selectedCategory = cat['label'] as String;
+                  });
+                  context.read<HomeCubit>().loadHomeData(category: _selectedCategory);
+                }
               },
               selectedColor: AppColors.primary,
               backgroundColor: AppColors.surface,
               labelStyle: AppTextStyles.labelMedium.copyWith(
-                color: isFirst ? Colors.white : AppColors.textSecondary,
+                color: isSelected ? Colors.white : AppColors.textSecondary,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isFirst ? AppColors.primary : AppColors.divider,
+                  color: isSelected ? AppColors.primary : AppColors.divider,
                 ),
               ),
               showCheckmark: false,

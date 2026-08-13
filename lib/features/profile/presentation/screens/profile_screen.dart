@@ -125,6 +125,8 @@ class ProfileScreen extends StatelessWidget {
 
                   const Gap(24),
 
+
+
                   CustomButton(
                     text: AppStrings.logout,
                     backgroundColor: AppColors.error,

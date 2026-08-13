@@ -13,12 +13,15 @@ class HotelRepository {
     String? search,
     String? city,
     int? starRating,
+    int? minPrice,
+    int? maxPrice,
+    bool? sortByPriceAsc,
     int limit = 20,
     int offset = 0,
   }) async {
     var query = _client
         .from('hotels')
-        .select('*, hotel_images(image_url)')
+        .select('*, hotel_images(image_url), rooms(price_per_night)')
         .eq('is_active', true);
 
     if (search != null && search.isNotEmpty) {
@@ -31,11 +34,43 @@ class HotelRepository {
       query = query.eq('star_rating', starRating);
     }
 
-    final data = await query
-        .order('avg_rating', ascending: false)
-        .range(offset, offset + limit - 1);
+    // We fetch all matching non-price filters first, ordered by avg_rating
+    final data = await query.order('avg_rating', ascending: false);
 
-    return (data as List).map((e) => HotelModel.fromJson(e)).toList();
+    // Calculate minPrice from rooms and parse to Model
+    List<HotelModel> allHotels = (data as List).map((e) {
+      final rooms = e['rooms'] as List?;
+      int? calcMinPrice;
+      if (rooms != null && rooms.isNotEmpty) {
+        calcMinPrice = rooms
+            .map((r) => r['price_per_night'] as int)
+            .reduce((a, b) => a < b ? a : b);
+      }
+      // Inject min_price to JSON so HotelModel.fromJson can pick it up
+      e['min_price'] = calcMinPrice;
+      return HotelModel.fromJson(e);
+    }).toList();
+
+    // Filter by price in Dart
+    if (minPrice != null) {
+      allHotels = allHotels.where((h) => h.minPrice != null && h.minPrice! >= minPrice).toList();
+    }
+    if (maxPrice != null) {
+      allHotels = allHotels.where((h) => h.minPrice != null && h.minPrice! <= maxPrice).toList();
+    }
+
+    // Sort by price in Dart
+    if (sortByPriceAsc == true) {
+      allHotels.sort((a, b) => (a.minPrice ?? 999999999).compareTo(b.minPrice ?? 999999999));
+    } else if (sortByPriceAsc == false) {
+      allHotels.sort((a, b) => (b.minPrice ?? 0).compareTo(a.minPrice ?? 0));
+    }
+
+    // Apply Pagination
+    final end = (offset + limit < allHotels.length) ? offset + limit : allHotels.length;
+    if (offset >= allHotels.length) return [];
+    
+    return allHotels.sublist(offset, end);
   }
 
   Future<List<HotelModel>> getPopularHotels({int limit = 10}) async {

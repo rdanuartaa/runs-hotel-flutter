@@ -135,6 +135,28 @@ class HotelCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (hotel.distanceInMeters != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.directions_walk,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          hotel.distanceInMeters! >= 1000
+                              ? '${(hotel.distanceInMeters! / 1000).toStringAsFixed(1)} km dari Anda'
+                              : '${hotel.distanceInMeters!.toStringAsFixed(0)} m dari Anda',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   // Facilities preview
                   if (hotel.facilities.isNotEmpty)

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'core/services/notification_service.dart';
 import 'core/config/supabase_config.dart';
 import 'injection_container.dart';
 import 'app.dart';
@@ -29,6 +32,14 @@ void main() async {
 
   // Initialize Supabase
   await SupabaseConfig.initialize();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Initialize Notification Service
+  await NotificationService().initialize();
 
   // Initialize dependencies
   await initDependencies();
