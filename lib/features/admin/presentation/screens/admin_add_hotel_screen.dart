@@ -11,6 +11,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/widgets/cached_image_widget.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../hotel/presentation/cubit/hotel_cubit.dart';
 
 import '../../../hotel/data/models/hotel_model.dart';
@@ -272,7 +274,7 @@ class _AdminAddHotelScreenState extends State<AdminAddHotelScreen> {
           uploadedUrl = await context.read<HotelCubit>().uploadImage(_selectedImage!, 'hotels');
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal upload gambar: $e')));
+            DialogUtils.showError(context, 'Gagal upload gambar: $e');
           }
           setState(() => _isUploadingImage = false);
           return;
@@ -313,10 +315,12 @@ class _AdminAddHotelScreenState extends State<AdminAddHotelScreen> {
       }
 
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(widget.hotel != null ? 'Hotel berhasil diupdate' : 'Hotel berhasil ditambahkan')),
-        );
-        context.pop(true);
+        DialogUtils.showSuccess(
+          context, 
+          widget.hotel != null ? 'Hotel berhasil diperbarui' : 'Hotel berhasil ditambahkan'
+        ).then((_) {
+          if (mounted) context.pop(true);
+        });
       }
     }
   }
@@ -331,7 +335,12 @@ class _AdminAddHotelScreenState extends State<AdminAddHotelScreen> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: BlocBuilder<HotelCubit, HotelState>(
+      body: BlocConsumer<HotelCubit, HotelState>(
+        listener: (context, state) {
+          if (state is HotelError) {
+            DialogUtils.showError(context, state.message);
+          }
+        },
         builder: (context, state) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),

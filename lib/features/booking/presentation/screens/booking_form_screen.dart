@@ -11,6 +11,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../hotel/data/models/hotel_model.dart';
 import '../../../hotel/data/models/room_model.dart';
@@ -74,14 +75,7 @@ class _BookingFormScreenState extends State<BookingFormScreen> {
 
   void _handleBooking() {
     if (_dateRange == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Pilih tanggal check-in dan check-out'),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      DialogUtils.showWarning(context, 'Pilih tanggal check-in dan check-out');
       return;
     }
 

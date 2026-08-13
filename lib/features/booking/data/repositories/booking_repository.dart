@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/booking_model.dart';
 
@@ -31,6 +33,16 @@ class BookingRepository {
   }
 
   Future<List<BookingModel>> getUserBookings(String userId, {String? status}) async {
+    final now = DateTime.now();
+    final todayStr = now.toIso8601String().split('T').first;
+    
+    // Auto check-out stale bookings (lazy update)
+    await _client.from('bookings')
+        .update({'status': 'checked_out', 'updated_at': now.toIso8601String()})
+        .eq('user_id', userId)
+        .inFilter('status', ['checked_in', 'confirmed'])
+        .lt('check_out', todayStr);
+
     var query = _client
         .from('bookings')
         .select('*, hotels(name, thumbnail_url, city), rooms(name, room_type)')
@@ -47,6 +59,15 @@ class BookingRepository {
 
   // --- UNTUK ADMIN ---
   Future<List<BookingModel>> getAllBookings({String? status}) async {
+    final now = DateTime.now();
+    final todayStr = now.toIso8601String().split('T').first;
+    
+    // Auto check-out stale bookings for all users (lazy update)
+    await _client.from('bookings')
+        .update({'status': 'checked_out', 'updated_at': now.toIso8601String()})
+        .inFilter('status', ['checked_in', 'confirmed'])
+        .lt('check_out', todayStr);
+
     var query = _client
         .from('bookings')
         .select('*, hotels(name, thumbnail_url, city), rooms(name, room_type), users(full_name, email)');
@@ -88,7 +109,7 @@ class BookingRepository {
         .from('bookings')
         .select('*, hotels(name, thumbnail_url, city), rooms(name, room_type)')
         .eq('user_id', userId)
-        .eq('status', 'cancelled')
+        .inFilter('status', ['cancelled', 'cancel_requested'])
         .order('created_at', ascending: false);
 
     return (data as List).map((e) => BookingModel.fromJson(e)).toList();
@@ -106,8 +127,68 @@ class BookingRepository {
 
   Future<void> cancelBooking(String bookingId) async {
     await _client.from('bookings').update({
+      'status': 'cancel_requested',
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', bookingId);
+  }
+
+  Future<void> updateBookingStatus(String bookingId, String status) async {
+    await _client.from('bookings').update({
+      'status': status,
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', bookingId);
+  }
+
+  Future<void> processRefund(String bookingId) async {
+    // 1. Ambil data payment
+    final paymentData = await _client
+        .from('payments')
+        .select()
+        .eq('booking_id', bookingId)
+        .maybeSingle();
+
+    if (paymentData == null) {
+      throw Exception('Data pembayaran tidak ditemukan. Lakukan refund manual.');
+    }
+
+    final midtransOrderId = paymentData['midtrans_order_id'];
+    if (midtransOrderId == null) {
+      throw Exception('Order ID Midtrans tidak ditemukan. Lakukan refund manual.');
+    }
+
+    // 2. Tembak API Refund Midtrans
+    const serverKey = 'SB-Mid-server-swZOZ8YKuFjw_tTDOk095-Qy';
+    final auth = 'Basic ${base64Encode(utf8.encode('$serverKey:'))}';
+    
+    final payload = {
+      'refund_key': 'refund-${DateTime.now().millisecondsSinceEpoch}',
+      'amount': paymentData['gross_amount'],
+      'reason': 'Pengajuan pembatalan oleh tamu disetujui',
+    };
+
+    final response = await HttpClient().postUrl(Uri.parse('https://api.sandbox.midtrans.com/v2/$midtransOrderId/refund'))
+      ..headers.set('Content-Type', 'application/json')
+      ..headers.set('Accept', 'application/json')
+      ..headers.set('Authorization', auth)
+      ..write(jsonEncode(payload));
+      
+    final res = await response.close();
+    final resBody = await res.transform(utf8.decoder).join();
+    
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      print('Midtrans Refund API Error: $resBody');
+      throw Exception('Otomatisasi refund via Midtrans gagal (kemungkinan metode pembayaran Bank Transfer/VA tidak didukung Midtrans untuk auto-refund). Silakan transfer manual ke tamu.');
+    }
+
+    // 3. Update status pesanan
+    await _client.from('bookings').update({
       'status': 'cancelled',
       'updated_at': DateTime.now().toIso8601String(),
     }).eq('id', bookingId);
+    
+    // 4. Update status pembayaran
+    await _client.from('payments').update({
+      'status': 'refunded',
+    }).eq('id', paymentData['id']);
   }
 }

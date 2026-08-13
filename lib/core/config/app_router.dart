@@ -18,6 +18,7 @@ import '../../features/booking/presentation/screens/booking_summary_screen.dart'
 import '../../features/booking/presentation/screens/booking_history_screen.dart';
 import '../../features/booking/presentation/cubit/booking_cubit.dart';
 import '../../features/booking/data/models/booking_model.dart';
+import '../../features/admin/presentation/screens/admin_booking_detail_screen.dart';
 import '../../features/payment/presentation/screens/payment_screen.dart';
 import '../../features/payment/presentation/screens/payment_webview_screen.dart';
 import '../../features/payment/presentation/screens/payment_status_screen.dart';
@@ -150,6 +151,16 @@ class AppRouter {
               create: (_) => getIt<BookingCubit>()..loadAllBookings(),
               child: const AdminBookingsScreen(),
             ),
+          ),
+          GoRoute(
+            path: '/admin/bookings/detail',
+            builder: (context, state) {
+              final booking = state.extra as BookingModel;
+              return BlocProvider(
+                create: (_) => getIt<BookingCubit>(),
+                child: AdminBookingDetailScreen(booking: booking),
+              );
+            },
           ),
           GoRoute(
             path: '/admin/reports',

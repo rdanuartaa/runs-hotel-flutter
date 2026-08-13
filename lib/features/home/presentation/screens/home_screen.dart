@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverToBoxAdapter(
                 child: BlocBuilder<HomeCubit, HomeState>(
                   builder: (context, state) {
-                    if (state is HomeLoading) {
+                    if (state is HomeLoading || state is HomeInitial) {
                       return Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(

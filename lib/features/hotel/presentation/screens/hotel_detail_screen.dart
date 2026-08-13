@@ -38,7 +38,7 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
       backgroundColor: AppColors.background,
       body: BlocBuilder<HotelCubit, HotelState>(
         builder: (context, state) {
-          if (state is HotelLoading) {
+          if (state is HotelLoading || state is HotelInitial) {
             return const LoadingWidget();
           }
 

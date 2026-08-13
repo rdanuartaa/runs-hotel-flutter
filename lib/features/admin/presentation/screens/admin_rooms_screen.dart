@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../hotel/presentation/cubit/hotel_cubit.dart';
 
 class AdminRoomsScreen extends StatefulWidget {
@@ -36,9 +37,7 @@ class _AdminRoomsScreenState extends State<AdminRoomsScreen> {
       body: BlocConsumer<HotelCubit, HotelState>(
         listener: (context, state) {
           if (state is HotelError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
+            DialogUtils.showError(context, state.message);
           }
         },
         builder: (context, state) {
@@ -139,9 +138,7 @@ class _AdminRoomsScreenState extends State<AdminRoomsScreen> {
                                                   Navigator.pop(ctx);
                                                   await context.read<HotelCubit>().deleteRoom(room.id, widget.hotelId);
                                                   if (context.mounted) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      const SnackBar(content: Text('Kamar berhasil dihapus')),
-                                                    );
+                                                    DialogUtils.showSuccess(context, 'Kamar berhasil dihapus');
                                                   }
                                                 },
                                                 child: const Text('Hapus', style: TextStyle(color: Colors.red)),

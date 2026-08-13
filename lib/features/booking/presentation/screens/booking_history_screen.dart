@@ -61,13 +61,13 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
           tabs: const [
             Tab(text: 'Mendatang'),
             Tab(text: 'Selesai'),
-            Tab(text: 'Dibatalkan'),
+            Tab(text: 'Refund / Batal'),
           ],
         ),
       ),
       body: BlocBuilder<BookingCubit, BookingState>(
         builder: (context, state) {
-          if (state is BookingLoading) {
+          if (state is BookingLoading || state is BookingInitial) {
             return const LoadingWidget();
           }
           if (state is BookingHistoryLoaded) {
@@ -119,6 +119,11 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final checkInDate = DateTime(booking.checkIn.year, booking.checkIn.month, booking.checkIn.day);
+    final daysUntilCheckIn = checkInDate.difference(todayDate).inDays;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -152,6 +157,62 @@ class _BookingCard extends StatelessWidget {
                       Text(CurrencyFormatter.format(booking.totalPrice), style: AppTextStyles.priceSmall.copyWith(fontSize: 13)),
                     ],
                   ),
+                  if (booking.status == 'pending' || booking.status == 'confirmed') ...[
+                    const SizedBox(height: 12),
+                    if (daysUntilCheckIn >= 3)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 36,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Ajukan Pembatalan'),
+                                content: const Text('Apakah Anda yakin ingin membatalkan pesanan ini dan meminta pengembalian dana (refund)?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Tidak')),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      final authState = context.read<AuthCubit>().state;
+                                      if (authState is AuthAuthenticated) {
+                                        context.read<BookingCubit>().cancelBooking(booking.id, authState.user.id);
+                                      }
+                                    },
+                                    child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: const Text('Ajukan Pembatalan (Refund)', style: TextStyle(fontSize: 12)),
+                        ),
+                      )
+                    else
+                      Text('Pembatalan maksimal H-3 sebelum Check-in', style: AppTextStyles.bodySmall.copyWith(color: Colors.red, fontStyle: FontStyle.italic)),
+                  ] else if (booking.status == 'cancel_requested') ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Colors.orange, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text('Pengajuan refund sedang diproses oleh Admin', style: AppTextStyles.bodySmall.copyWith(color: Colors.orange))),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -174,18 +235,27 @@ class _StatusBadge extends StatelessWidget {
       case 'confirmed':
         color = AppColors.success;
         label = 'Dikonfirmasi';
+        break;
       case 'checked_in':
         color = AppColors.info;
         label = 'Check-in';
+        break;
       case 'checked_out':
         color = AppColors.textSecondary;
         label = 'Selesai';
+        break;
+      case 'cancel_requested':
+        color = Colors.orange;
+        label = 'Menunggu Refund';
+        break;
       case 'cancelled':
         color = AppColors.error;
-        label = 'Dibatalkan';
+        label = 'Sukses Refund';
+        break;
       default:
         color = AppColors.warning;
         label = 'Menunggu';
+        break;
     }
 
     return Container(

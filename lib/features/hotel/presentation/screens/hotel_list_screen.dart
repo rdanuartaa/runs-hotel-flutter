@@ -303,7 +303,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
           Expanded(
             child: BlocBuilder<HotelCubit, HotelState>(
               builder: (context, state) {
-                if (state is HotelLoading) {
+                if (state is HotelLoading || state is HotelInitial) {
                   return ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: 3,

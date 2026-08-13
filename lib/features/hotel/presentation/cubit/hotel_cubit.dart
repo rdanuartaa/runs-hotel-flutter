@@ -197,7 +197,11 @@ class HotelCubit extends Cubit<HotelState> {
       await _hotelRepository.deleteHotel(id);
       await loadHotels();
     } catch (e) {
-      emit(HotelError(e.toString()));
+      if (e.toString().contains('23503') || e.toString().contains('foreign_key_violation')) {
+        emit(const HotelError('Tidak dapat menghapus hotel karena masih ada pesanan aktif.'));
+      } else {
+        emit(HotelError(e.toString()));
+      }
     }
   }
 
@@ -273,7 +277,11 @@ class HotelCubit extends Cubit<HotelState> {
       await _hotelRepository.deleteRoom(id);
       await loadHotelDetail(hotelId);
     } catch (e) {
-      emit(HotelError(e.toString()));
+      if (e.toString().contains('23503') || e.toString().contains('foreign_key_violation')) {
+        emit(const HotelError('Tidak dapat menghapus kamar karena masih ada pesanan aktif.'));
+      } else {
+        emit(HotelError(e.toString()));
+      }
     }
   }
 

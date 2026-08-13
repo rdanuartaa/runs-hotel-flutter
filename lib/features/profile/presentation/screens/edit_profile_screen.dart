@@ -10,6 +10,7 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../../../../injection_container.dart';
@@ -64,9 +65,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal upload avatar: $e'), backgroundColor: AppColors.error),
-        );
+        DialogUtils.showError(context, 'Gagal upload avatar: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -83,7 +82,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       userId: authState.user.id,
       fullName: _nameController.text.trim(),
       phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-    );
+    ).then((_) {
+      if (mounted) context.pop();
+    });
   }
 
   @override
@@ -100,14 +101,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Profil berhasil diperbarui'),
-                backgroundColor: AppColors.success,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            );
+            DialogUtils.showSuccess(context, 'Profil berhasil diperbarui');
+            // Optionally context.pop() here if they just saved, but we can't tell if it's initial load. 
+            // Wait, we can track if they clicked save.
+          } else if (state is AuthError) {
+            DialogUtils.showError(context, state.message);
           }
         },
         child: BlocBuilder<AuthCubit, AuthState>(

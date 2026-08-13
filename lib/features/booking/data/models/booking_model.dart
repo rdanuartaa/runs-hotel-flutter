@@ -20,6 +20,8 @@ class BookingModel extends Equatable {
   final String? hotelCity;
   final String? roomName;
   final String? roomType;
+  final String? userName;
+  final String? userEmail;
 
   const BookingModel({
     required this.id,
@@ -40,6 +42,8 @@ class BookingModel extends Equatable {
     this.hotelCity,
     this.roomName,
     this.roomType,
+    this.userName,
+    this.userEmail,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -64,6 +68,8 @@ class BookingModel extends Equatable {
       hotelCity: hotel?['city'] as String?,
       roomName: room?['name'] as String?,
       roomType: room?['room_type'] as String?,
+      userName: json['users']?['full_name'] as String?,
+      userEmail: json['users']?['email'] as String?,
     );
   }
 
@@ -92,8 +98,10 @@ class BookingModel extends Equatable {
         return 'Check-in';
       case 'checked_out':
         return 'Check-out';
+      case 'cancel_requested':
+        return 'Menunggu Refund';
       case 'cancelled':
-        return 'Dibatalkan';
+        return 'Sukses Refund';
       default:
         return status;
     }

@@ -4,11 +4,19 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../hotel/presentation/cubit/hotel_cubit.dart';
 import '../../../hotel/data/models/hotel_model.dart';
 
-class AdminHotelsScreen extends StatelessWidget {
+class AdminHotelsScreen extends StatefulWidget {
   const AdminHotelsScreen({super.key});
+
+  @override
+  State<AdminHotelsScreen> createState() => _AdminHotelsScreenState();
+}
+
+class _AdminHotelsScreenState extends State<AdminHotelsScreen> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +31,7 @@ class AdminHotelsScreen extends StatelessWidget {
       body: BlocConsumer<HotelCubit, HotelState>(
         listener: (context, state) {
           if (state is HotelError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-            );
+            DialogUtils.showError(context, state.message);
           }
         },
         builder: (context, state) {
@@ -40,12 +46,46 @@ class AdminHotelsScreen extends StatelessWidget {
               return Center(child: Text('Belum ada hotel yang ditambahkan.', style: AppTextStyles.bodyLarge));
             }
             
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: hotels.length,
-              itemBuilder: (context, index) {
-                final hotel = hotels[index];
-                return Card(
+            
+            final filteredHotels = hotels.where((h) => 
+              h.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+              h.city.toLowerCase().contains(_searchQuery.toLowerCase())
+            ).toList();
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama hotel atau kota...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  ),
+                ),
+                if (filteredHotels.isEmpty)
+                  Expanded(
+                    child: Center(
+                      child: Text('Tidak ada hotel ditemukan.', style: AppTextStyles.bodyLarge),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filteredHotels.length,
+                      itemBuilder: (context, index) {
+                        final hotel = filteredHotels[index];
+                        return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
@@ -93,12 +133,10 @@ class AdminHotelsScreen extends StatelessWidget {
                                   TextButton(
                                     onPressed: () async {
                                       Navigator.pop(ctx);
-                                      await context.read<HotelCubit>().deleteHotel(hotel.id);
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Hotel berhasil dihapus')),
-                                        );
-                                      }
+                                        await context.read<HotelCubit>().deleteHotel(hotel.id);
+                                        if (context.mounted) {
+                                          DialogUtils.showSuccess(context, 'Hotel berhasil dihapus');
+                                        }
                                     },
                                     child: const Text('Hapus', style: TextStyle(color: Colors.red)),
                                   ),
@@ -112,8 +150,11 @@ class AdminHotelsScreen extends StatelessWidget {
                   ),
                 );
               },
-            );
-          }
+            ),
+          ),
+        ],
+      );
+    }
           
           return const SizedBox();
         },

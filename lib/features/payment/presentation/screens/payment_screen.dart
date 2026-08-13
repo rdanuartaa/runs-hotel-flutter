@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/loading_widget.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../booking/data/models/booking_model.dart';
 import '../cubit/payment_cubit.dart';
 
@@ -45,20 +46,39 @@ class _PaymentScreenState extends State<PaymentScreen> {
           } else if (state is PaymentFailed) {
             context.go('/payment-status', extra: {'status': 'failed'});
           } else if (state is PaymentError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-            );
+            DialogUtils.showError(context, state.message);
           }
         },
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              LoadingWidget(),
-              SizedBox(height: 16),
-              Text('Menyiapkan pembayaran...'),
-            ],
-          ),
+        child: BlocBuilder<PaymentCubit, PaymentState>(
+          builder: (context, state) {
+            if (state is PaymentError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(state.message, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.read<PaymentCubit>().createPayment(widget.booking.id),
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  LoadingWidget(),
+                  SizedBox(height: 16),
+                  Text('Menyiapkan pembayaran...'),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

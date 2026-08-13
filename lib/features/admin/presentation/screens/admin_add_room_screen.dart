@@ -9,6 +9,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../hotel/presentation/cubit/hotel_cubit.dart';
 import '../../../hotel/data/models/room_model.dart';
 
@@ -112,7 +113,7 @@ class _AdminAddRoomScreenState extends State<AdminAddRoomScreen> {
           uploadedUrl = await context.read<HotelCubit>().uploadImage(_selectedImage!, 'rooms');
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal upload gambar: $e')));
+            DialogUtils.showError(context, 'Gagal upload gambar: $e');
           }
           setState(() => _isUploadingImage = false);
           return;
@@ -151,10 +152,12 @@ class _AdminAddRoomScreenState extends State<AdminAddRoomScreen> {
       }
 
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(widget.room != null ? 'Kamar berhasil diupdate' : 'Kamar berhasil ditambahkan')),
-        );
-        context.pop(true);
+        DialogUtils.showSuccess(
+          context, 
+          widget.room != null ? 'Kamar berhasil diperbarui' : 'Kamar berhasil ditambahkan'
+        ).then((_) {
+          if (mounted) context.pop(true);
+        });
       }
     }
   }
@@ -169,7 +172,12 @@ class _AdminAddRoomScreenState extends State<AdminAddRoomScreen> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: BlocBuilder<HotelCubit, HotelState>(
+      body: BlocConsumer<HotelCubit, HotelState>(
+        listener: (context, state) {
+          if (state is HotelError) {
+            DialogUtils.showError(context, state.message);
+          }
+        },
         builder: (context, state) {
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),

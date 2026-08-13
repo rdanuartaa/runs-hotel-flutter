@@ -33,13 +33,15 @@ void main() async {
   // Initialize Supabase
   await SupabaseConfig.initialize();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Initialize Notification Service
-  await NotificationService().initialize();
+  // Initialize Firebase & Notifications
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await NotificationService().initialize();
+  } catch (e) {
+    debugPrint('Firebase initialization bypassed for now: $e');
+  }
 
   // Initialize dependencies
   await initDependencies();

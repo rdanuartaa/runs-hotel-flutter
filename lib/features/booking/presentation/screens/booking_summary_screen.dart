@@ -10,6 +10,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/cached_image_widget.dart';
+import '../../../../core/utils/dialog_utils.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../hotel/data/models/hotel_model.dart';
 import '../../../hotel/data/models/room_model.dart';
@@ -53,9 +54,7 @@ class BookingSummaryScreen extends StatelessWidget {
           if (state is BookingCreated) {
             context.go('/payment', extra: {'booking': state.booking});
           } else if (state is BookingError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
-            );
+            DialogUtils.showError(context, state.message);
           }
         },
         child: SingleChildScrollView(
