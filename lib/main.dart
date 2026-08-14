@@ -8,8 +8,13 @@ import 'core/config/supabase_config.dart';
 import 'injection_container.dart';
 import 'app.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
 
   // Initialize intl for Indonesian locale
   await initializeDateFormatting('id_ID', null);

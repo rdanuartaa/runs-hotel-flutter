@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -49,16 +50,16 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDnLaKNcTzQVcm1uBATIPtxUmyEwEDLFzM',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_ANDROID_API_KEY'] ?? '',
     appId: '1:849649633908:android:81517d5109a8e1ee639f21',
     messagingSenderId: '849649633908',
     projectId: 'bookinghotelapp-418ad',
     storageBucket: 'bookinghotelapp-418ad.firebasestorage.app',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCOpC2fh8WP0Xm64X3Ras5RQgx4YBF72bc',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_IOS_API_KEY'] ?? '',
     appId: '1:849649633908:ios:e32861864ba23fe2639f21',
     messagingSenderId: '849649633908',
     projectId: 'bookinghotelapp-418ad',

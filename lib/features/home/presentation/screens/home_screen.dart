@@ -20,13 +20,14 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCategory = 'The Royal';
+  String _selectedCategory = 'All';
   String _locationName = 'Mencari lokasi...';
 
   double? _userLat;
   double? _userLon;
 
   final List<String> _categories = [
+    'All',
     'The Royal',
     'Standard',
     'Executive',
