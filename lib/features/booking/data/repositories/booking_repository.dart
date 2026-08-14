@@ -190,5 +190,17 @@ class BookingRepository {
     await _client.from('payments').update({
       'status': 'refunded',
     }).eq('id', paymentData['id']);
+    
+    // 5. Send Notification
+    try {
+      await _client.functions.invoke('send-push-notification', body: {
+        'userId': paymentData['user_id'],
+        'title': 'Refund Berhasil 💸',
+        'body': 'Dana Anda telah berhasil dikembalikan karena pengajuan pembatalan (Refund) disetujui.',
+        'dataPayload': {'booking_id': bookingId, 'type': 'payment_refunded'}
+      });
+    } catch (e) {
+      print('Gagal mengirim notifikasi refund: $e');
+    }
   }
 }
