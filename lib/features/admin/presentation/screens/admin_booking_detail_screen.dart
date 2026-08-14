@@ -6,13 +6,15 @@ import 'package:gap/gap.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/dialog_utils.dart';
+import '../../../../core/services/pdf_service.dart';
 import '../../../booking/data/models/booking_model.dart';
 import '../../../booking/presentation/cubit/booking_cubit.dart';
 
 class AdminBookingDetailScreen extends StatefulWidget {
   final BookingModel booking;
+  final bool isFromScanner;
 
-  const AdminBookingDetailScreen({super.key, required this.booking});
+  const AdminBookingDetailScreen({super.key, required this.booking, this.isFromScanner = false});
 
   @override
   State<AdminBookingDetailScreen> createState() => _AdminBookingDetailScreenState();
@@ -39,6 +41,15 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (_booking.status != 'pending')
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
+              tooltip: 'Unduh E-Ticket (PDF)',
+              onPressed: () => PdfService.generateAndShowETicket(_booking),
+            ),
+          const Gap(8),
+        ],
       ),
       body: BlocListener<BookingCubit, BookingState>(
         listener: (context, state) async {
@@ -91,7 +102,7 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
                 valueColor: _getStatusColor(_booking.status), isBold: true),
               const Gap(32),
 
-              _buildSectionTitle('Ubah Status Pesanan'),
+              _buildSectionTitle(widget.isFromScanner ? 'Ubah Status Pesanan' : 'Status Pesanan (Hanya via QR Scan)'),
               const Gap(16),
               _buildStatusAction(
                 context, 
@@ -100,15 +111,17 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
                 color: Colors.green, 
                 icon: Icons.check_circle_outline,
                 currentStatus: _booking.status,
+                isDisabled: true, // Manual confirm is always disabled because it auto-confirms upon payment
               ),
               const Gap(12),
               _buildStatusAction(
                 context, 
                 title: 'Check-in (Gues in House)', 
                 status: 'checked_in', 
-                color: Colors.blue, 
+                color: AppColors.primary, 
                 icon: Icons.login,
                 currentStatus: _booking.status,
+                isDisabled: !widget.isFromScanner,
               ),
               const Gap(12),
               _buildStatusAction(
@@ -118,16 +131,7 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
                 color: AppColors.primary, 
                 icon: Icons.logout,
                 currentStatus: _booking.status,
-              ),
-              const Gap(12),
-              _buildStatusAction(
-                context, 
-                title: 'Batalkan & Refund', 
-                status: 'cancelled', 
-                color: Colors.red, 
-                icon: Icons.cancel_outlined,
-                currentStatus: _booking.status,
-                isDisabled: _booking.status == 'checked_in' || _booking.status == 'checked_out',
+                isDisabled: !widget.isFromScanner,
               ),
               const Gap(12),
               if (_booking.status == 'cancel_requested') ...[
@@ -273,7 +277,11 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
     final isCompleted = _isStatusAchieved(status, currentStatus);
     return InkWell(
       onTap: (isCompleted || isDisabled)
-        ? null 
+        ? () {
+            if (isDisabled && !widget.isFromScanner) {
+              DialogUtils.showWarning(context, 'Perubahan status hanya dapat dilakukan dengan melakukan Scan QR E-Ticket pengguna demi keamanan.');
+            }
+          }
         : () {
             if (status == 'checked_in') {
               final today = DateTime.now();
@@ -363,7 +371,7 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
       case 'confirmed':
         return Colors.green;
       case 'checked_in':
-        return Colors.blue;
+        return AppColors.primary;
       case 'checked_out':
         return AppColors.primary;
       case 'cancelled':

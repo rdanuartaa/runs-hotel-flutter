@@ -15,7 +15,7 @@ class FacilityChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final accentColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
 
     return GestureDetector(
       onTap: onTap,

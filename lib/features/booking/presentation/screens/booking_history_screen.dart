@@ -7,6 +7,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../../core/services/pdf_service.dart';
 import '../../data/models/booking_model.dart';
 import '../cubit/booking_cubit.dart';
 
@@ -43,7 +44,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final accentColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
     final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
     final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
 
@@ -141,7 +142,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> with Single
 
   Widget _buildBookingList(List<BookingModel> bookings, String type) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final accentColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
 
     if (bookings.isEmpty) {
       return Center(
@@ -203,7 +204,7 @@ class _BookingCard extends StatelessWidget {
     final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
     final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
     final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
-    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final accentColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
 
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -334,6 +335,25 @@ class _BookingCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(child: Text('Pengajuan refund sedang diproses oleh Admin', style: TextStyle(color: Colors.orange, fontSize: 11))),
                         ],
+                      ),
+                    ),
+                  ],
+                  
+                  if (booking.status != 'pending' && booking.status != 'cancel_requested') ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 36,
+                      child: ElevatedButton.icon(
+                        onPressed: () => PdfService.generateAndShowETicket(booking),
+                        icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                        label: const Text('Unduh E-Ticket (PDF)', style: TextStyle(fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          foregroundColor: AppColors.primary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
                       ),
                     ),
                   ],

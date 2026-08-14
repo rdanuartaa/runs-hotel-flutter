@@ -4,10 +4,10 @@ class AppColors {
   AppColors._();
 
   // Primary
-  static const primary = Color(0xFF1A56DB);
-  static const primaryLight = Color(0xFF3B82F6);
-  static const primaryDark = Color(0xFF0F3A8A);
-  static const primarySurface = Color(0xFFEBF0FF);
+  static const primary = Color(0xFF2171C4); // Dark blue from the left side of the logo 'r'
+  static const primaryLight = Color(0xFF56A8E5); // Light blue from the right side 'h'
+  static const primaryDark = Color(0xFF185392);
+  static const primarySurface = Color(0xFFEBF4FA);
 
   // Secondary
   static const secondary = Color(0xFFF59E0B);
@@ -47,7 +47,7 @@ class AppColors {
   static const primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primary, Color(0xFF3B82F6)],
+    colors: [primary, primaryLight],
   );
 
   static const heroGradient = LinearGradient(

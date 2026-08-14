@@ -41,11 +41,18 @@ class DialogUtils {
     required Color iconColor,
     required String message,
   }) async {
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.4),
-      builder: (context) {
+      builder: (dialogContext) {
+        // Otomatis menutup setelah 2 detik
+        Future.delayed(const Duration(seconds: 2), () {
+          if (dialogContext.mounted) {
+            Navigator.of(dialogContext).pop();
+          }
+        });
+
         return Center(
           child: Material(
             color: Colors.transparent,
@@ -90,11 +97,5 @@ class DialogUtils {
         );
       },
     );
-
-    // Otomatis menutup setelah 2 detik untuk memberi kesan "hidup"
-    await Future.delayed(const Duration(seconds: 2));
-    if (context.mounted) {
-      Navigator.of(context).pop();
-    }
   }
 }

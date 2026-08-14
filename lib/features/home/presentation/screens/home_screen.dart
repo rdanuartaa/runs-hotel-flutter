@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await _fetchLocation();
             return _reloadHomeData();
           },
-          color: const Color(0xFF7B6649),
+          color: const Color(0xFF2171C4),
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(child: _buildHeader()),
@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: BlocBuilder<HomeCubit, HomeState>(
                     builder: (context, state) {
                       if (state is HomeLoading || state is HomeInitial) {
-                        return const Center(child: CircularProgressIndicator(color: Color(0xFF7B6649)));
+                        return const Center(child: CircularProgressIndicator(color: Color(0xFF2171C4)));
                       }
                       if (state is HomeError) {
                         return ErrorStateWidget(
@@ -312,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: const Text(
                     'Book now',
                     style: TextStyle(
-                      color: Color(0xFF7B6649),
+                      color: Color(0xFF2171C4),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -337,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 'Choose a room',
                 style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFD4B996) : const Color(0xFF7B6649),
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -376,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   cat,
                   style: TextStyle(
                     color: isSelected 
-                        ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFFD4B996) : const Color(0xFF7B6649)) 
+                        ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4)) 
                         : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600]),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     fontSize: 14,

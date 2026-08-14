@@ -31,6 +31,7 @@ import '../../features/admin/presentation/screens/admin_rooms_screen.dart';
 import '../../features/admin/presentation/screens/admin_add_room_screen.dart';
 import '../../features/admin/presentation/screens/admin_bookings_screen.dart';
 import '../../features/admin/presentation/screens/admin_reports_screen.dart';
+import '../../features/admin/presentation/screens/admin_scanner_screen.dart';
 import '../../injection_container.dart';
 
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -153,12 +154,29 @@ class AppRouter {
           GoRoute(
             path: '/admin/bookings/detail',
             builder: (context, state) {
-              final booking = state.extra as BookingModel;
+              BookingModel booking;
+              bool isFromScanner = false;
+              
+              if (state.extra is Map<String, dynamic>) {
+                final extra = state.extra as Map<String, dynamic>;
+                booking = extra['booking'] as BookingModel;
+                isFromScanner = extra['isFromScanner'] as bool? ?? false;
+              } else {
+                booking = state.extra as BookingModel;
+              }
+              
               return BlocProvider(
                 create: (_) => getIt<BookingCubit>(),
-                child: AdminBookingDetailScreen(booking: booking),
+                child: AdminBookingDetailScreen(booking: booking, isFromScanner: isFromScanner),
               );
             },
+          ),
+          GoRoute(
+            path: '/admin/scanner',
+            builder: (context, state) => BlocProvider(
+              create: (_) => getIt<BookingCubit>()..loadAllBookings(),
+              child: const AdminScannerScreen(),
+            ),
           ),
           GoRoute(
             path: '/admin/reports',
@@ -280,8 +298,9 @@ class _MainShell extends StatelessWidget {
     if (isAdmin) {
       if (location == '/admin') return 0;
       if (location == '/admin/bookings') return 1;
-      if (location == '/admin/reports') return 2;
-      if (location == '/profile') return 3;
+      if (location == '/admin/scanner') return 2;
+      if (location == '/admin/reports') return 3;
+      if (location == '/profile') return 4;
       return 0;
     } else {
       if (location == '/') return 0;
@@ -300,7 +319,7 @@ class _MainShell extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
     final navBgColor = isDark ? const Color(0xFF121212) : Colors.white;
-    final selectedColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final selectedColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -320,8 +339,10 @@ class _MainShell extends StatelessWidget {
                 case 1:
                   context.go('/admin/bookings');
                 case 2:
-                  context.go('/admin/reports');
+                  context.go('/admin/scanner');
                 case 3:
+                  context.go('/admin/reports');
+                case 4:
                   context.go('/profile');
               }
             } else {
@@ -352,6 +373,11 @@ class _MainShell extends StatelessWidget {
                 icon: const Icon(Icons.list_alt_outlined, color: Colors.grey),
                 selectedIcon: Icon(Icons.list_alt, color: selectedColor),
                 label: 'Pesanan',
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.qr_code_scanner_outlined, color: Colors.grey),
+                selectedIcon: Icon(Icons.qr_code_scanner, color: selectedColor),
+                label: 'Scan QR',
               ),
               NavigationDestination(
                 icon: const Icon(Icons.attach_money_outlined, color: Colors.grey),

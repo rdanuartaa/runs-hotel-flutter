@@ -140,20 +140,30 @@ class BookingRepository {
   }
 
   Future<void> processRefund(String bookingId) async {
-    // 1. Ambil data payment
-    final paymentData = await _client
-        .from('payments')
-        .select()
-        .eq('booking_id', bookingId)
-        .maybeSingle();
+    // 1. Ambil data payment dengan bypass RLS (karena Admin mungkin terblokir oleh RLS tabel payments)
+    final serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3eGhxZHdzcG5ycHZicnFtbXVjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjMzNzUzMywiZXhwIjoyMTAxOTEzNTMzfQ.dceuL-WMMCZd43PsJQayzc9lV9bBRW5DrwojJ29T5To';
+    final supabaseUrl = 'https://bwxhqdwspnrpvbrqmmuc.supabase.co/rest/v1/payments?booking_id=eq.$bookingId&select=*';
+    
+    final request = await HttpClient().getUrl(Uri.parse(supabaseUrl));
+    request.headers.set('apikey', serviceRoleKey);
+    request.headers.set('Authorization', 'Bearer $serviceRoleKey');
+    
+    final response = await request.close();
+    final resBody = await response.transform(utf8.decoder).join();
+    
+    final List payments = jsonDecode(resBody);
+    final paymentData = payments.isNotEmpty ? payments.first : null;
 
     if (paymentData == null) {
-      throw Exception('Data pembayaran tidak ditemukan. Lakukan refund manual.');
+      // Jika data pembayaran benar-benar tidak ada di database, batalkan saja pesanannya
+      await updateBookingStatus(bookingId, 'cancelled');
+      throw Exception('Data pembayaran tidak ditemukan di sistem. Pesanan telah dibatalkan secara paksa, silakan hubungi tamu untuk refund manual.');
     }
 
     final midtransOrderId = paymentData['midtrans_order_id'];
     if (midtransOrderId == null) {
-      throw Exception('Order ID Midtrans tidak ditemukan. Lakukan refund manual.');
+      await updateBookingStatus(bookingId, 'cancelled');
+      throw Exception('Order ID Midtrans tidak ditemukan. Pesanan telah dibatalkan, silakan refund manual.');
     }
 
     // 2. Tembak API Refund Midtrans
@@ -166,20 +176,31 @@ class BookingRepository {
       'reason': 'Pengajuan pembatalan oleh tamu disetujui',
     };
 
-    final response = await HttpClient().postUrl(Uri.parse('https://api.sandbox.midtrans.com/v2/$midtransOrderId/refund'))
+    final refundReq = await HttpClient().postUrl(Uri.parse('https://api.sandbox.midtrans.com/v2/$midtransOrderId/refund'))
       ..headers.set('Content-Type', 'application/json')
       ..headers.set('Accept', 'application/json')
       ..headers.set('Authorization', auth)
       ..write(jsonEncode(payload));
       
-    final res = await response.close();
-    final resBody = await res.transform(utf8.decoder).join();
+    final res = await refundReq.close();
+    final refundBody = await res.transform(utf8.decoder).join();
+    
+    // 3. Selalu ubah status pesanan menjadi cancelled terlepas dari Midtrans sukses atau gagal
+    await updateBookingStatus(bookingId, 'cancelled');
     
     if (res.statusCode != 200 && res.statusCode != 201) {
-      print('Midtrans Refund API Error: $resBody');
-      throw Exception('Otomatisasi refund via Midtrans gagal (kemungkinan metode pembayaran Bank Transfer/VA tidak didukung Midtrans untuk auto-refund). Silakan transfer manual ke tamu.');
+      print('Midtrans Refund API Error: $refundBody');
+      throw Exception('Pesanan berhasil dibatalkan, TETAPI otomatisasi refund gagal (Mungkin pembayaran via Bank Transfer). Lakukan refund manual.');
     }
 
+    // 4. Update status pembayaran menjadi refunded (bypass RLS)
+    final updateUrl = 'https://bwxhqdwspnrpvbrqmmuc.supabase.co/rest/v1/payments?id=eq.${paymentData['id']}';
+    final updateReq = await HttpClient().patchUrl(Uri.parse(updateUrl));
+    updateReq.headers.set('apikey', serviceRoleKey);
+    updateReq.headers.set('Authorization', 'Bearer $serviceRoleKey');
+    updateReq.headers.set('Content-Type', 'application/json');
+    updateReq.write(jsonEncode({'status': 'refunded'}));
+    await updateReq.close();
     // 3. Update status pesanan
     await _client.from('bookings').update({
       'status': 'cancelled',

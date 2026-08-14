@@ -143,7 +143,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AppColors.primary, Color(0xFF5E8AF3)],
+              colors: [AppColors.primary, AppColors.primaryLight],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -188,7 +188,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                 title: 'Pesanan Aktif',
                 value: pesananAktif.toString(),
                 icon: Icons.hotel,
-                color: Colors.blue,
+                color: AppColors.primary,
               ),
             ),
             const Gap(16),
@@ -299,7 +299,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
             child: Column(
               children: [
                 PieChartWidget(
-                  data: revenueByHotel.map((k, v) => MapEntry(k, v.toDouble())),
+                  data: {for (var e in sortedHotels) e.key: e.value.toDouble()},
                   colors: const [
                     AppColors.primary, 
                     Colors.orange, 

@@ -18,7 +18,7 @@ class HotelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final accentColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
     final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
     final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
     final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;

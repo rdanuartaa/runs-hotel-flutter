@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = isDark ? const Color(0xFFD4B996) : const Color(0xFF7B6649);
+    final accentColor = isDark ? const Color(0xFF56A8E5) : const Color(0xFF2171C4);
     final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
     final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
     final subtextColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        color: accentColor,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -88,10 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.hotel_rounded,
-                        color: Colors.white,
-                        size: 36,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Image.asset('assets/icons/logorunhotel.png', fit: BoxFit.contain),
                       ),
                     ),
                   ).animate().fadeIn(duration: 600.ms).scale(

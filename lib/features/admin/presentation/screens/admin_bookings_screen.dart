@@ -147,16 +147,31 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                   }
                   
                   if (bookings.isEmpty) {
-                    return Center(child: Text('Belum ada pesanan.', style: AppTextStyles.bodyLarge));
+                    return RefreshIndicator(
+                      onRefresh: () => context.read<BookingCubit>().loadAllBookings(),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.5,
+                            child: Center(child: Text('Belum ada pesanan.', style: AppTextStyles.bodyLarge)),
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: bookings.length,
-                    itemBuilder: (context, index) {
-                      final booking = bookings[index];
-                      return _buildBookingCard(context, booking);
-                    },
+                  return RefreshIndicator(
+                    onRefresh: () => context.read<BookingCubit>().loadAllBookings(),
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: bookings.length,
+                      itemBuilder: (context, index) {
+                        final booking = bookings[index];
+                        return _buildBookingCard(context, booking);
+                      },
+                    ),
                   );
                 }
                 
@@ -303,7 +318,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'confirmed': return Colors.green;
-      case 'checked_in': return Colors.blue;
+      case 'checked_in': return AppColors.primary;
       case 'checked_out': return AppColors.primary;
       case 'cancelled': return Colors.red;
       case 'cancel_requested': return Colors.orange;

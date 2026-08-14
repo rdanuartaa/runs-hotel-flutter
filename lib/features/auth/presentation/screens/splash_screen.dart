@@ -14,7 +14,7 @@ class SplashScreen extends StatelessWidget {
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -24,10 +24,9 @@ class SplashScreen extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(
-            Icons.hotel_rounded,
-            color: Colors.white,
-            size: 36,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset('assets/icons/logorunhotel.png', fit: BoxFit.contain),
           ),
         ).animate().fadeIn(duration: 600.ms).scale(
               begin: const Offset(0.8, 0.8),
