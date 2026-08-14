@@ -35,6 +35,11 @@ class NotificationService {
 
     debugPrint('User granted permission: ${settings.authorizationStatus}');
 
+    // Request permission specifically for flutter_local_notifications (Android 13+)
+    await _localNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+
     // 2. Initialize Local Notifications (for showing heads-up notifications when app is in foreground)
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -85,19 +90,30 @@ class NotificationService {
       String? token = await _firebaseMessaging.getToken();
       debugPrint("FCM Token: $token");
       if (token != null) {
-        _saveTokenToSupabase(token);
+        saveFCMToken(token);
       }
       
       // Also listen for token refreshes
       _firebaseMessaging.onTokenRefresh.listen((newToken) {
-        _saveTokenToSupabase(newToken);
+        saveFCMToken(newToken);
       });
     } catch (e) {
       debugPrint("Failed to get FCM token: $e");
     }
   }
 
-  Future<void> _saveTokenToSupabase(String token) async {
+  Future<void> saveCurrentFCMToken() async {
+    try {
+      String? token = await _firebaseMessaging.getToken();
+      if (token != null) {
+        await saveFCMToken(token);
+      }
+    } catch (e) {
+      debugPrint("Failed to get FCM token for saving: $e");
+    }
+  }
+
+  Future<void> saveFCMToken(String token) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user != null) {

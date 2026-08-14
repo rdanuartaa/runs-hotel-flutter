@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../../../core/services/notification_service.dart';
 import '../models/user_model.dart';
 
 class AuthRepository {
@@ -92,6 +93,15 @@ class AuthRepository {
 
       print('Mengambil data profil lengkap...');
       final profile = await getUserProfile(response.user!.id);
+      
+      // Simpan FCM Token ke Supabase setelah login
+      print('Menyimpan FCM Token...');
+      try {
+        await NotificationService().saveCurrentFCMToken();
+      } catch (e) {
+        print('Gagal menyimpan FCM token: $e');
+      }
+
       print('--- END LOGIN PROCESS (SUKSES) ---');
       return profile;
     } on AuthException catch (e) {
@@ -150,6 +160,13 @@ class AuthRepository {
             'User',
         'avatar_url': googleUser.photoUrl,
       });
+    }
+
+    // Simpan FCM Token ke Supabase setelah login
+    try {
+      await NotificationService().saveCurrentFCMToken();
+    } catch (e) {
+      print('Gagal menyimpan FCM token via Google: $e');
     }
 
     return await getUserProfile(response.user!.id);
