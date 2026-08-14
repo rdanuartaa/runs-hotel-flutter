@@ -159,7 +159,7 @@ class HotelCard extends StatelessWidget {
                         Text(
                           hotel.distanceInMeters! >= 1000
                               ? '${(hotel.distanceInMeters! / 1000).toStringAsFixed(1)} km dari Anda'
-                              : '${hotel.distanceInMeters!.toStringAsFixed(0)} m dari Anda',
+                              : '${hotel.distanceInMeters!.toStringAsFixed(0)} meter dari Anda',
                           style: TextStyle(
                             color: accentColor,
                             fontWeight: FontWeight.w500,

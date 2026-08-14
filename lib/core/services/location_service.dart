@@ -35,8 +35,19 @@ class LocationService {
     // When we reach here, permissions are granted and we can
     // continue accessing the position of the device.
     try {
-      return await Geolocator.getCurrentPosition();
+      // Try to get last known position first (instant)
+      Position? position = await Geolocator.getLastKnownPosition();
+      
+      // If no last known position, request current position with a short timeout
+      if (position == null) {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+          timeLimit: const Duration(seconds: 2),
+        );
+      }
+      return position;
     } catch (e) {
+      // If everything fails, return null
       return null;
     }
   }

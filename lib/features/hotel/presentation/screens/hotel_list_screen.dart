@@ -23,8 +23,6 @@ class HotelListScreen extends StatefulWidget {
 
 class _HotelListScreenState extends State<HotelListScreen> {
   final _searchController = TextEditingController();
-  int? _minPrice;
-  int? _maxPrice;
   bool? _sortByPriceAsc;
   bool _sortByDistance = false;
 
@@ -42,8 +40,6 @@ class _HotelListScreenState extends State<HotelListScreen> {
           search: _searchController.text.isEmpty ? null : _searchController.text,
           city: widget.city,
           starRating: widget.starRating,
-          minPrice: _minPrice,
-          maxPrice: _maxPrice,
           sortByPriceAsc: _sortByPriceAsc,
           sortByDistance: _sortByDistance,
         );
@@ -55,10 +51,6 @@ class _HotelListScreenState extends State<HotelListScreen> {
     final cardColor = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E1E1E) : Colors.white);
     final textColor = Theme.of(context).textTheme.bodyLarge?.color ?? (isDark ? Colors.white : Colors.black87);
 
-    RangeValues currentRange = RangeValues(
-      _minPrice?.toDouble() ?? 0,
-      _maxPrice?.toDouble() ?? 5000000,
-    );
     bool? currentSortPrice = _sortByPriceAsc;
     bool currentSortDistance = _sortByDistance;
 
@@ -94,7 +86,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Filter Harga & Jarak',
+                        'Filter & Urutkan',
                         style: TextStyle(
                           color: accentColor,
                           fontSize: 18,
@@ -115,29 +107,6 @@ class _HotelListScreenState extends State<HotelListScreen> {
                     ],
                   ),
                   const Gap(20),
-                  Text('Rentang Harga', style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
-                  const Gap(8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Rp ${currentRange.start.toInt()}', style: TextStyle(color: textColor, fontSize: 12)),
-                      Text('Rp ${currentRange.end.toInt()}', style: TextStyle(color: textColor, fontSize: 12)),
-                    ],
-                  ),
-                  RangeSlider(
-                    values: currentRange,
-                    min: 0,
-                    max: 5000000,
-                    divisions: 100,
-                    activeColor: accentColor,
-                    inactiveColor: accentColor.withValues(alpha: 0.2),
-                    onChanged: (values) {
-                      setModalState(() {
-                        currentRange = values;
-                      });
-                    },
-                  ),
-                  const Gap(16),
                   Text('Urutkan', style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 14)),
                   const Gap(8),
                   Wrap(
@@ -189,8 +158,6 @@ class _HotelListScreenState extends State<HotelListScreen> {
                         child: GestureDetector(
                           onTap: () {
                             setState(() {
-                              _minPrice = null;
-                              _maxPrice = null;
                               _sortByPriceAsc = null;
                               _sortByDistance = false;
                             });
@@ -214,8 +181,6 @@ class _HotelListScreenState extends State<HotelListScreen> {
                         child: GestureDetector(
                           onTap: () {
                             setState(() {
-                              _minPrice = currentRange.start.toInt();
-                              _maxPrice = currentRange.end.toInt();
                               _sortByPriceAsc = currentSortPrice;
                               _sortByDistance = currentSortDistance;
                             });
@@ -373,7 +338,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: (_minPrice != null || _sortByPriceAsc != null || _sortByDistance)
+                        color: (_sortByPriceAsc != null || _sortByDistance)
                             ? accentColor
                             : cardColor,
                         borderRadius: BorderRadius.circular(8),
@@ -388,7 +353,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
                       ),
                       child: Icon(
                         Icons.tune,
-                        color: (_minPrice != null || _sortByPriceAsc != null || _sortByDistance)
+                        color: (_sortByPriceAsc != null || _sortByDistance)
                             ? Colors.white
                             : subtextColor,
                         size: 20,

@@ -11,6 +11,8 @@ import '../widgets/room_card.dart';
 import '../widgets/review_card.dart';
 import '../widgets/facility_chip.dart';
 import '../widgets/image_gallery.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class HotelDetailScreen extends StatefulWidget {
   final String hotelId;
@@ -223,6 +225,52 @@ class _HotelDetailScreenState extends State<HotelDetailScreen> {
                                 .map((f) => FacilityChip(facility: f))
                                 .toList(),
                           ),
+                        ],
+
+                        // Map Location
+                        if (hotel.latitude != null && hotel.longitude != null) ...[
+                          const Gap(24),
+                          Text(
+                            'Lokasi',
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ).animate().fadeIn(delay: 250.ms),
+                          const Gap(12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: SizedBox(
+                              height: 200,
+                              child: FlutterMap(
+                                options: MapOptions(
+                                  initialCenter: LatLng(hotel.latitude!, hotel.longitude!),
+                                  initialZoom: 15.0,
+                                ),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                    userAgentPackageName: 'com.hotelbooking.app',
+                                  ),
+                                  MarkerLayer(
+                                    markers: [
+                                      Marker(
+                                        point: LatLng(hotel.latitude!, hotel.longitude!),
+                                        width: 80,
+                                        height: 80,
+                                        child: const Icon(
+                                          Icons.location_on,
+                                          color: Colors.red,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ).animate().fadeIn(delay: 250.ms),
                         ],
 
                         // Rooms
