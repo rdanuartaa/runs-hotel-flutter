@@ -33,6 +33,10 @@ dependencies:
   firebase_messaging: ^15.0.0
   flutter_local_notifications: ^17.1.2
   geolocator: ^14.0.3
+  pdf: ^3.12.0
+  printing: ^5.14.3
+  mobile_scanner: ^7.4.0
+  permission_handler: ^12.0.0
   flutter_dotenv: ^5.1.0
   flutter_map: ^8.3.1
   latlong2: ^0.10.1
@@ -43,6 +47,22 @@ dev_dependencies:
   build_runner: ^2.4.9
   json_serializable: ^6.8.0
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/logorunhotel.png"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: "assets/icons/logorunhotel_splash.png"
+  android: true
+  ios: true
+  android_12:
+    image: "assets/icons/logorunhotel_splash.png"
+    icon_background_color: "#FFFFFF"
 
 flutter:
   uses-material-design: true
