@@ -2,7 +2,7 @@ class AppStrings {
   AppStrings._();
 
   // App
-  static const appName = 'StayEase';
+  static const appName = 'Runs Hotel';
   static const appTagline = 'Find Your Perfect Stay';
 
   // Auth
