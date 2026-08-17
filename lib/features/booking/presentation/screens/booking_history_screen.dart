@@ -343,15 +343,15 @@ class _BookingCard extends StatelessWidget {
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
-                      height: 36,
                       child: ElevatedButton.icon(
                         onPressed: () => PdfService.generateAndShowETicket(booking),
                         icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
                         label: const Text('Unduh E-Ticket (PDF)', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                           foregroundColor: AppColors.primary,
                           elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),

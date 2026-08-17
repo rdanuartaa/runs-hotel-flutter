@@ -64,10 +64,14 @@ class _HomeScreenState extends State<HomeScreen> {
           final address = data['address'] as Map<String, dynamic>?;
           if (address != null) {
             final city = address['city'] ?? address['town'] ?? address['village'] ?? address['county'] ?? 'Unknown';
+            final state = address['state'] ?? '';
             final country = address['country'] ?? '';
+            
+            final parts = [city, state, country].where((part) => part.toString().trim().isNotEmpty).toList();
+            
             if (mounted) {
               setState(() {
-                _locationName = '$city, $country';
+                _locationName = parts.join(', ');
               });
             }
           }
@@ -180,15 +184,21 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.location_on, color: Colors.red, size: 16),
-              const Gap(4),
-              Text(
-                _locationName,
-                style: AppTextStyles.labelMedium.copyWith(color: textColor),
-              ),
-            ],
+          Expanded(
+            child: Row(
+              children: [
+                const Icon(Icons.location_on, color: Colors.red, size: 16),
+                const Gap(4),
+                Expanded(
+                  child: Text(
+                    _locationName,
+                    style: AppTextStyles.labelMedium.copyWith(color: textColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
           Row(
             children: [
