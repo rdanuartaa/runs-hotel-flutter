@@ -40,6 +40,7 @@ class HomeCubit extends Cubit<HomeState> {
         search: search,
         starRating: starRating,
         maxPrice: maxPrice,
+        requireRooms: true,
       );
       
       if (userLat != null && userLon != null) {

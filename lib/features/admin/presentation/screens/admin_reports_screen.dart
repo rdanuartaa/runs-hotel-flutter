@@ -34,25 +34,6 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[800] : Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Icon(Icons.arrow_back, color: textColor, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
                   Text(
                     'Laporan & Keuangan',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(

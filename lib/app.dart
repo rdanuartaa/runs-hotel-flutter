@@ -7,6 +7,7 @@ import 'core/constants/app_strings.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'injection_container.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'core/theme/theme_cubit.dart';
 
 class HotelBookingApp extends StatelessWidget {
@@ -24,10 +25,16 @@ class HotelBookingApp extends StatelessWidget {
           create: (_) => getIt<ThemeCubit>(),
         ),
       ],
-      child: BlocBuilder<ThemeCubit, ThemeMode>(
-        builder: (context, themeMode) {
-          return MaterialApp.router(
-            title: AppStrings.appName,
+      child: BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is! AuthInitial) {
+            FlutterNativeSplash.remove();
+          }
+        },
+        child: BlocBuilder<ThemeCubit, ThemeMode>(
+          builder: (context, themeMode) {
+            return MaterialApp.router(
+              title: AppStrings.appName,
             debugShowCheckedModeBanner: false,
             themeMode: themeMode,
             theme: _buildTheme(),
@@ -35,6 +42,7 @@ class HotelBookingApp extends StatelessWidget {
             routerConfig: AppRouter.router,
           );
         },
+        ),
       ),
     );
   }

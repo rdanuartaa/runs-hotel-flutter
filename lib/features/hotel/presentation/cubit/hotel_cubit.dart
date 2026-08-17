@@ -22,6 +22,7 @@ class HotelCubit extends Cubit<HotelState> {
     int? maxPrice,
     bool? sortByPriceAsc,
     bool sortByDistance = false,
+    bool requireRooms = false,
   }) async {
     emit(const HotelLoading());
     try {
@@ -32,6 +33,7 @@ class HotelCubit extends Cubit<HotelState> {
         minPrice: minPrice,
         maxPrice: maxPrice,
         sortByPriceAsc: sortByPriceAsc,
+        requireRooms: requireRooms,
       );
 
       // Get user location to calculate distance

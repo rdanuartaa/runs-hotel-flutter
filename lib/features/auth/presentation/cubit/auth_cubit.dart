@@ -11,6 +11,7 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit(this._authRepository) : super(const AuthInitial());
 
   Future<void> checkAuthStatus() async {
+    await Future.delayed(const Duration(milliseconds: 500)); // Delay for smooth transition and UI attachment
     final user = _authRepository.currentUser;
     if (user != null) {
       try {

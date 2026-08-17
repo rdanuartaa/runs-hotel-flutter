@@ -42,6 +42,7 @@ class _HotelListScreenState extends State<HotelListScreen> {
           starRating: widget.starRating,
           sortByPriceAsc: _sortByPriceAsc,
           sortByDistance: _sortByDistance,
+          requireRooms: true,
         );
   }
 

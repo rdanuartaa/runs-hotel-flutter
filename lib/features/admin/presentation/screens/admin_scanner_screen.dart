@@ -20,6 +20,7 @@ class AdminScannerScreen extends StatefulWidget {
 
 class _AdminScannerScreenState extends State<AdminScannerScreen> with WidgetsBindingObserver {
   bool _isProcessing = false;
+  bool _showSuccessAnimation = false;
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
@@ -88,21 +89,23 @@ class _AdminScannerScreenState extends State<AdminScannerScreen> with WidgetsBin
       
       if (!mounted) return;
 
-      if (booking.status == 'confirmed') {
-        // Proses Check-in Otomatis
-        await repository.updateBookingStatus(bookingId, 'checked_in');
+      if (booking.status == 'confirmed' || booking.status == 'checked_in') {
+        final newStatus = booking.status == 'confirmed' ? 'checked_in' : 'checked_out';
+        final message = booking.status == 'confirmed' ? 'Berhasil Check-In tamu!' : 'Berhasil Check-Out tamu!';
+        
+        await repository.updateBookingStatus(bookingId, newStatus);
+        
         if (mounted) {
-          DialogUtils.showSuccess(context, 'Berhasil Check-In tamu!').then((_) {
-            if (mounted) context.pop(); // Kembali ke halaman sebelumnya
-          });
-        }
-      } else if (booking.status == 'checked_in') {
-        // Proses Check-out Otomatis
-        await repository.updateBookingStatus(bookingId, 'checked_out');
-        if (mounted) {
-          DialogUtils.showSuccess(context, 'Berhasil Check-Out tamu!').then((_) {
-            if (mounted) context.pop(); // Kembali ke halaman sebelumnya
-          });
+          setState(() => _showSuccessAnimation = true);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
+          
+          await Future.delayed(const Duration(seconds: 2));
+          if (mounted) {
+            setState(() {
+              _showSuccessAnimation = false;
+              _isProcessing = false;
+            });
+          }
         }
       } else {
         // Status tidak valid untuk diproses
@@ -134,6 +137,7 @@ class _AdminScannerScreenState extends State<AdminScannerScreen> with WidgetsBin
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        automaticallyImplyLeading: false,
       ),
       body: Stack(
         children: [
@@ -192,6 +196,36 @@ class _AdminScannerScreenState extends State<AdminScannerScreen> with WidgetsBin
               ),
             ),
           ),
+          if (_showSuccessAnimation)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black54,
+                child: Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: value,
+                        child: Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            color: Colors.white,
+                            size: 80,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -44,25 +44,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => context.pop(),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey[800] : Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Icon(Icons.arrow_back, color: textColor, size: 20),
-                    ),
-                  ),
-                  const Gap(16),
                   Text(
                     'Kelola Pesanan',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(

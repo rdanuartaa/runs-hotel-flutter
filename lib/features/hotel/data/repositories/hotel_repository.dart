@@ -16,12 +16,13 @@ class HotelRepository {
     int? minPrice,
     int? maxPrice,
     bool? sortByPriceAsc,
+    bool requireRooms = false,
     int limit = 20,
     int offset = 0,
   }) async {
     var query = _client
         .from('hotels')
-        .select('*, hotel_images(image_url), rooms(price_per_night)')
+        .select('*, hotel_images(image_url), rooms${requireRooms ? '!inner' : ''}(price_per_night)')
         .eq('is_active', true);
 
     if (search != null && search.isNotEmpty) {
@@ -74,14 +75,7 @@ class HotelRepository {
   }
 
   Future<List<HotelModel>> getPopularHotels({int limit = 10}) async {
-    final data = await _client
-        .from('hotels')
-        .select('*, hotel_images(image_url)')
-        .eq('is_active', true)
-        .order('avg_rating', ascending: false)
-        .limit(limit);
-
-    return (data as List).map((e) => HotelModel.fromJson(e)).toList();
+    return getHotels(limit: limit, requireRooms: true);
   }
 
   Future<HotelModel> getHotelById(String hotelId) async {

@@ -111,16 +111,17 @@ class RoomCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: onSelect,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: accentColor,
-                            borderRadius: BorderRadius.circular(10),
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: onSelect,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: accentColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 0,
                           ),
                           child: const Text(
                             'Pilih',
